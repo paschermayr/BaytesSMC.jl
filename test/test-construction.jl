@@ -16,6 +16,7 @@ for iter in eachindex(objectives)
         SMC(_rng, mcmc, _obj, kerneldefault, samplingdefault)
         ## Propose new parameter
         smc = SMC(_rng, mcmc, _obj)
-        propose!(_rng, smc, _obj.model, _obj.data)
+        vals, diagnostics = propose!(_rng, smc, _obj.model, _obj.data)
+        @test typeof(diagnostics.temperature) == _flattentype
     end
 end
