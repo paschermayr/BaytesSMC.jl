@@ -21,5 +21,5 @@ makedocs(;
 
 deploydocs(;
     repo="github.com/paschermayr/BaytesSMC.jl",
-    devbranch="main",
+    devbranch="master",
 )
