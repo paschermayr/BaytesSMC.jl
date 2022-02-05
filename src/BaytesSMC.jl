@@ -61,8 +61,6 @@ using ModelWrappers:
     ℓDensityResult,
     ℓGradientResult
 
-#import ..BaytesFilters: ParticleKernel
-#using ..BaytesMCMC, ..BaytesFilters, ..BaytesPMCMC
 import BaytesFilters: ParticleKernel
 using BaytesMCMC, BaytesFilters, BaytesPMCMC
 
@@ -99,5 +97,5 @@ export
     init,
     init!,
     resample!
-
+    
 end
