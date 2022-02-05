@@ -4,7 +4,7 @@ objectives = [Objective(ModelWrapper(MyBaseModel(), myparameter, FlattenDefault(
     Objective(ModelWrapper(MyBaseModel(), myparameter, FlattenDefault(; output = Float32)), data_uv)
     ]
 
-## Make model
+## Make model for several parameter types
 for iter in eachindex(objectives)
     _obj = objectives[iter]
     _flattentype = _obj.model.info.flattendefault.output
