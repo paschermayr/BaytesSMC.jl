@@ -6,10 +6,10 @@
 [![arXiv article](xxx)](xxx)
 -->
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://paschermayr.github.io/BaytesSMC.jl/stable)
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://paschermayr.github.io/BaytesSMC.jl/dev)
+[![Documentation, Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://paschermayr.github.io/BaytesSMC.jl/stable)
 [![Build Status](https://github.com/paschermayr/BaytesSMC.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/paschermayr/BaytesSMC.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![Coverage](https://codecov.io/gh/paschermayr/BaytesSMC.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/paschermayr/BaytesSMC.jl)
+[![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
 BaytesSMC.jl is a library to perform SMC proposal steps on `ModelWrapper` structs, see [ModelWrappers.jl](https://github.com/paschermayr/ModelWrappers.jl). Kernels that are defined in [BaytesMCMC.jl](https://github.com/paschermayr/BaytesMCMC.jl) and [BaytesFilters.jl](https://github.com/paschermayr/BaytesFilters.jl) can be
 used inside this library.
