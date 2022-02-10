@@ -97,5 +97,5 @@ export
     init,
     init!,
     resample!
-    
+
 end
