@@ -10,7 +10,7 @@ for iter in eachindex(objectives)
     _flattentype = _obj.model.info.flattendefault.output
     @testset "Kernel construction and propagation, all models" begin
         ## Assign smc kernel
-        mcmc = MCMC(NUTS,(:μ, :σ,); config_kw = (;stepsizeadaption=UpdateFalse()))
+        mcmc = MCMC(NUTS,(:μ, :σ,); stepsize = ConfigStepsize(;stepsizeadaption = UpdateFalse()))
         kerneldefault  = SMCDefault(Ntuning = 50, jittermin = 1, jittermax = 10)
         samplingdefault = SampleDefault(chains = 10)
         SMC(_rng, mcmc, _obj, kerneldefault, samplingdefault)
