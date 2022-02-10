@@ -3,7 +3,6 @@
 objectives = [Objective(ModelWrapper(MyBaseModel(), myparameter, FlattenDefault()), data_uv),
     Objective(ModelWrapper(MyBaseModel(), myparameter, FlattenDefault(; output = Float32)), data_uv)
     ]
-
 ## Make model for several parameter types
 for iter in eachindex(objectives)
     _obj = objectives[iter]
