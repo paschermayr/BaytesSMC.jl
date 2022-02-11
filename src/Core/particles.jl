@@ -90,6 +90,7 @@ function SMCDiagnostics(
     smc::SMCParticles, temperature::T, ESS::Float64, accepted::Bool, jittersteps::Int64, iter::Int64
 ) where {T<:AbstractFloat}
     return SMCDiagnostics(
+        BaytesCore.weightedincrement(smc.weights),
         #!NOTE: There is not really any way around making a copy from buffer if no pointer issue for diagnostics
         copy(smc.buffer.cumweights),
         temperature,

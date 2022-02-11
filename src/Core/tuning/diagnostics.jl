@@ -8,6 +8,8 @@ SMC Diagnostics container, including diagnostics of kernels used in jittering st
 $(TYPEDFIELDS)
 """
 struct SMCDiagnostics{P,J,T<:AbstractFloat} <: AbstractDiagnostics
+    "Weighted average of incremental log weight"
+    ℓincrement::Float64
     "Log likelihood of individual Particle Filter/MCMC call. Recorded to perform model selection via marginal likelihood."
     ℓℒ::Vector{Float64}
     "Temperature to perform proposal steps and propagation"
@@ -29,6 +31,7 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat} <: AbstractDiagnostics
     "Current iteration count."
     iter::Int64
     function SMCDiagnostics(
+        ℓincrement::Float64,
         ℓℒ::Vector{Float64},
         temperature::T,
         prediction::Vector{P},
@@ -41,6 +44,7 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat} <: AbstractDiagnostics
         iter::Int64,
     ) where {P,J,T<:AbstractFloat}
         return new{P,J,T}(
+            ℓincrement,
             ℓℒ,
             temperature,
             prediction,

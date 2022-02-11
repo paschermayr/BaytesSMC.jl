@@ -1,7 +1,7 @@
 name = "BaytesSMC"
 uuid = "2428e3a5-deaa-4b4d-8ec5-54cd60d7566c"
 authors = ["Patrick Aschermayr <p.aschermayr@gmail.com>"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
