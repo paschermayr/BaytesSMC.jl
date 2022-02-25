@@ -8,53 +8,45 @@ SMC Diagnostics container, including diagnostics of kernels used in jittering st
 $(TYPEDFIELDS)
 """
 struct SMCDiagnostics{P,J,T<:AbstractFloat} <: AbstractDiagnostics
-    "Weighted average of incremental log weight"
+    "Diagnostics used for all Baytes kernels"
+    base::BaytesCore.BaseDiagnostics{Vector{P}}
+    "Weighted average of incremental log weights - can be used for marginal likelihood computation."
     ℓincrement::Float64
-    "Log likelihood of individual Particle Filter/MCMC call. Recorded to perform model selection via marginal likelihood."
-    ℓℒ::Vector{Float64}
-    "Temperature to perform proposal steps and propagation"
-    temperature::T
-    "Predictions. Note that this may differ from predicitions in jitterdiagnostics, as prediction field is updated each iteration."
-    prediction::Vector{P}
+    "Log weights for resampling steps."
+    ℓweights::Vector{Float64}
+    "Normalized Log weights."
+    ℓweightsₙ::Vector{Float64}
     "Diagnostics of jitter steps. If not resampled this iteration (i.e., resampled == false), contains jitterdiagnostics from previous step."
     jitterdiagnostics::Vector{J}
     "Number of jittering steps"
     jittersteps::Int64
     "Correlation from rejuvented continuous parameter"
     ρ::Vector{T}
-    "Normalized Log weights"
-    ℓweightsₙ::Vector{Float64}
     "ESS and accepted steps for SMC kernel"
     ESS::Float64
     "Boolean if step has been resampled."
     resampled::Bool
-    "Current iteration count."
-    iter::Int64
     function SMCDiagnostics(
+        base::BaytesCore.BaseDiagnostics{Vector{P}},
         ℓincrement::Float64,
-        ℓℒ::Vector{Float64},
-        temperature::T,
-        prediction::Vector{P},
+        ℓweights::Vector{Float64},
+        ℓweightsₙ::Vector{Float64},
         jitterdiagnostics::Vector{J},
         jittersteps::Int64,
         ρ::Vector{T},
-        ℓweightsₙ::Vector{Float64},
         ESS::Float64,
         resampled::Bool,
-        iter::Int64,
     ) where {P,J,T<:AbstractFloat}
         return new{P,J,T}(
+            base,
             ℓincrement,
-            ℓℒ,
-            temperature,
-            prediction,
+            ℓweights,
+            ℓweightsₙ,
             jitterdiagnostics,
             jittersteps,
             ρ,
-            ℓweightsₙ,
             ESS,
             resampled,
-            iter,
         )
     end
 end
@@ -63,12 +55,12 @@ end
 function generate_showvalues(diagnostics::D) where {D<:SMCDiagnostics}
     return function showvalues()
         return (:smc, "diagnostics"),
-        (:iter, diagnostics.iter),
-        (:AvgLogLik, mean(diagnostics.ℓℒ)),
+        (:iter, diagnostics.base.iter),
+        (:Avgℓobjective, mean(diagnostics.ℓweights)),
+        (:Temperature, diagnostics.base.temperature),
         (:ESS, diagnostics.ESS),
         (:resampled, diagnostics.resampled),
-        (:AvgJitterCorrelation, mean(diagnostics.ρ)),
-        (:Temperature, diagnostics.temperature)
+        (:AvgJitterCorrelation, mean(diagnostics.ρ))
     end
 end
 

@@ -73,15 +73,15 @@ function results(
     )
     println(
         "Initial average ℓlikelihood per particle: ",
-        round(Statistics.mean(diagnosticsᵛ[begin].ℓℒ); digits=Ndigits),
+        round(Statistics.mean(diagnosticsᵛ[begin].ℓweights); digits=Ndigits),
         ", variance: ",
-        round(Statistics.var(diagnosticsᵛ[begin].ℓℒ); digits=Ndigits),
+        round(Statistics.var(diagnosticsᵛ[begin].ℓweights); digits=Ndigits),
     )
     println(
         "Final average ℓlikelihood per particle: ",
-        round(Statistics.mean(diagnosticsᵛ[end].ℓℒ); digits=Ndigits),
+        round(Statistics.mean(diagnosticsᵛ[end].ℓweights); digits=Ndigits),
         ", variance: ",
-        round(Statistics.var(diagnosticsᵛ[end].ℓℒ); digits=Ndigits),
+        round(Statistics.var(diagnosticsᵛ[end].ℓweights); digits=Ndigits),
     )
     ## Number of jittering steps
     println("Total number of jittering steps: ",

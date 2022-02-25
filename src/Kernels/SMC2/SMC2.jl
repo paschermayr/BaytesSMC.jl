@@ -46,11 +46,11 @@ end
 function get_result(kernel::SMC2Kernel)
     return get_result(kernel.pmcmc)
 end
-
+#=
 function get_ℓweight(kernel::SMC2Kernel)
     return get_ℓweight(kernel.pmcmc)
 end
-
+=#
 function infer(
     _rng::Random.AbstractRNG, kernel::SMC2Kernel, model::ModelWrapper, data::D
 ) where {D}
@@ -74,7 +74,7 @@ end
 
 function SMCweight(_rng::Random.AbstractRNG, objective::Objective, algorithm::SMC2Kernel, cumweightsₜ₋₁)
     #!NOTE: Use cumulative weight from propagated pf, taking into account new data
-    cumweightsₜ = objective.temperature * get_ℓweight(algorithm.pf)
+    cumweightsₜ = objective.temperature * algorithm.pf.particles.ℓobjective.cumulative #get_ℓweight(algorithm.pf)
     #!NOTE: cumweightsₜ₋₁ already has correct temperature at t-1
     return cumweightsₜ, cumweightsₜ - cumweightsₜ₋₁
 end
@@ -88,7 +88,7 @@ function SMCreweight(_rng::Random.AbstractRNG, objective::Objective, algorithm::
         objective.temperature,
         BaytesCore.UpdateTrue()
     )
-    cumweightsₜ = objective.temperature * get_ℓweight(algorithm.pf)
+    cumweightsₜ = objective.temperature * algorithm.pf.particles.ℓobjective.cumulative #get_ℓweight(algorithm.pf)
     #!NOTE: cumweightsₜ₋₁ already has correct temperature at t-1
     return cumweightsₜ, cumweightsₜ - cumweightsₜ₋₁
 end
@@ -186,7 +186,7 @@ function propagate!(_rng::Random.AbstractRNG, particles::SMCParticles{<:SMC2Kern
             data,
             temperature
         )
-        particles.buffer.predictions[iter] = diagnostics.prediction
+        particles.buffer.predictions[iter] = diagnostics.base.prediction
     end
     return nothing
 end
