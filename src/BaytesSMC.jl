@@ -16,7 +16,6 @@ import BaytesCore:
     propagate!,
     result!,
     get_result,
-#    get_ℓweight,
     get_sym,
 
     generate_showvalues,
