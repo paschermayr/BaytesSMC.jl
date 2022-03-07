@@ -36,7 +36,7 @@ using BaytesCore:
     AbstractConstructor,
     Updater,
     Iterator,
-    islarger,
+    issmaller,
     computeESS,
     grab,
     to_NamedTuple,
