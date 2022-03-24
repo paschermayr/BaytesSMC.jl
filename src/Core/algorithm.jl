@@ -146,8 +146,10 @@ function propose!(
     ## Set back tune.jitter and update buffer to store correct information for diagnostics
     update!(smc.tune)
     update!(smc.particles.buffer)
-    ## Move θ particles
+    ## If latent θ trajectory increasing - propagate forward
     propagate!(_rng, smc.particles, smc.tune, data, temperature)
+    ## Predict new data given current particles
+    predict!(_rng, smc.particles, smc.tune, data, temperature)
     ## Adjust weights with log likelihood INCREMENT at time t
     weight!(_rng, smc.particles, smc.tune, data, temperature)
     ## Resample and jitter particles if criterion fulfilled

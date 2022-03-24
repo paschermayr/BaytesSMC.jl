@@ -59,6 +59,7 @@ using ModelWrappers:
     ℓObjectiveResult,
     ℓDensityResult,
     ℓGradientResult
+import ModelWrappers: predict, generate, dynamics
 
 import BaytesFilters: ParticleKernel
 using BaytesMCMC, BaytesFilters, BaytesPMCMC
@@ -95,6 +96,11 @@ export
     update!,
     init,
     init!,
-    resample!
+    resample!,
+
+    #ModelWrappers
+    predict,
+    generate,
+    dynamics
 
 end

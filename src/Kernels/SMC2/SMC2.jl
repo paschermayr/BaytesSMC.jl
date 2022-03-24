@@ -46,11 +46,10 @@ end
 function get_result(kernel::SMC2Kernel)
     return get_result(kernel.pmcmc)
 end
-#=
-function get_ℓweight(kernel::SMC2Kernel)
-    return get_ℓweight(kernel.pmcmc)
+function predict(_rng::Random.AbstractRNG, kernel::SMC2Kernel, objective::Objective)
+    return predict(_rng, kernel.pf, objective)
 end
-=#
+
 function infer(
     _rng::Random.AbstractRNG, kernel::SMC2Kernel, model::ModelWrapper, data::D
 ) where {D}
@@ -179,14 +178,15 @@ function propagate!(_rng::Random.AbstractRNG, particles::SMCParticles{<:SMC2Kern
     ## Propagate series forward with recent particle
     #Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(particles.model)
     Base.Threads.@threads for iter in eachindex(particles.model)
-        _, diagnostics = propagate!(
+        #_, diagnostics = propagate!(
+        propagate!(
             _rng,
             particles.kernel[iter].pf,
             particles.model[iter],
             data,
             temperature
         )
-        particles.buffer.predictions[iter] = diagnostics.base.prediction
+        #particles.buffer.predictions[iter] = diagnostics.base.prediction
     end
     return nothing
 end
