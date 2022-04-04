@@ -87,8 +87,8 @@ end
 
 ############################################################################################
 function SMCDiagnostics(
-    smc::SMCParticles, temperature::T, ESS::Float64, accepted::Bool, jittersteps::Int64, iter::Int64
-) where {T<:AbstractFloat}
+    smc::SMCParticles, temperature::T, ESS::Float64, accepted::Bool, jittersteps::Int64, iter::Int64, generated::G
+) where {T<:AbstractFloat, G}
     return SMCDiagnostics(
         BaytesCore.BaseDiagnostics(
             Statistics.mean(smc.buffer.cumweights),
@@ -105,6 +105,7 @@ function SMCDiagnostics(
         copy(smc.buffer.correlation.ρ),
         ESS,
         accepted,
+        generated
     )
 end
 

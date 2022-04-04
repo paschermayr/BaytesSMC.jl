@@ -32,6 +32,18 @@ function (objective::Objective{<:ModelWrapper{MyBaseModel}})(θ::NamedTuple)
 end
 myobjective1(myobjective1.model.val)
 
+function ModelWrappers.generate(_rng::Random.AbstractRNG, objective::Objective{<:ModelWrapper{MyBaseModel}})
+    @unpack model, data = objective
+    @unpack μ, σ = model.val
+    return Float16(μ[1])
+end
+
+function ModelWrappers.predict(_rng::Random.AbstractRNG, objective::Objective{<:ModelWrapper{MyBaseModel}})
+    @unpack model, data = objective
+    @unpack μ, σ = model.val
+	return rand(_rng, Normal(μ, σ))
+end
+
 ######################################## Model 2 ~ PMCMC/SMC2
 
 # Parameter

@@ -7,7 +7,7 @@ SMC Diagnostics container, including diagnostics of kernels used in jittering st
 # Fields
 $(TYPEDFIELDS)
 """
-struct SMCDiagnostics{P,J,T<:AbstractFloat} <: AbstractDiagnostics
+struct SMCDiagnostics{P,J,T<:AbstractFloat,G} <: AbstractDiagnostics
     "Diagnostics used for all Baytes kernels"
     base::BaytesCore.BaseDiagnostics{Vector{P}}
     "Weighted average of incremental log weights - can be used for marginal likelihood computation."
@@ -26,6 +26,8 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat} <: AbstractDiagnostics
     ESS::Float64
     "Boolean if step has been resampled."
     resampled::Bool
+    "Generated quantities specified for objective"
+    generated::G
     function SMCDiagnostics(
         base::BaytesCore.BaseDiagnostics{Vector{P}},
         ℓincrement::Float64,
@@ -36,8 +38,9 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat} <: AbstractDiagnostics
         ρ::Vector{T},
         ESS::Float64,
         resampled::Bool,
-    ) where {P,J,T<:AbstractFloat}
-        return new{P,J,T}(
+        generated::G
+    ) where {P,J,T<:AbstractFloat,G}
+        return new{P,J,T,G}(
             base,
             ℓincrement,
             ℓweights,
@@ -47,6 +50,7 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat} <: AbstractDiagnostics
             ρ,
             ESS,
             resampled,
+            generated
         )
     end
 end

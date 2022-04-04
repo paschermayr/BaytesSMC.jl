@@ -7,7 +7,12 @@ Default arguments for SMC constructor.
 # Fields
 $(TYPEDFIELDS)
 """
-struct SMCDefault{F<:Function, T<:BaytesCore.ResamplingMethod, B<:BaytesCore.UpdateBool}
+struct SMCDefault{
+    F<:Function,
+    T<:BaytesCore.ResamplingMethod,
+    B<:BaytesCore.UpdateBool,
+    U<:BaytesCore.UpdateBool
+}
     "Number of tuning steps used when constructing sampler."
     Ntuning::Int64
     "Threshold for resampling chains."
@@ -24,6 +29,8 @@ struct SMCDefault{F<:Function, T<:BaytesCore.ResamplingMethod, B<:BaytesCore.Upd
     jittermin::Int64
     "Maximum number of jittering steps."
     jittermax::Int64
+    "Boolean if generate(_rng, objective) for corresponding model is stored in PF Diagnostics."
+    generated::U
     function SMCDefault(;
         Ntuning=10,
         resamplingmethod::T = BaytesFilters.Systematic(),
@@ -32,7 +39,8 @@ struct SMCDefault{F<:Function, T<:BaytesCore.ResamplingMethod, B<:BaytesCore.Upd
         jitteradaption::B = BaytesCore.UpdateTrue(),
         jitterthreshold=0.9,
         jittermin=1,
-        jittermax=10
+        jittermax=10,
+        generated=BaytesCore.UpdateFalse(),
     ) where {
     F<:Function,
     T<:BaytesCore.ResamplingMethod,
@@ -42,7 +50,7 @@ struct SMCDefault{F<:Function, T<:BaytesCore.ResamplingMethod, B<:BaytesCore.Upd
         ArgCheck.@argcheck 0.0 <= resamplingthreshold <= 1.0
         ArgCheck.@argcheck 0.0 <= jitterthreshold <= 1.0
         ArgCheck.@argcheck 0 < jittermin <= jittermax
-        return new{F, T, B}(
+        return new{F, T, B, typeof(generated)}(
             Ntuning,
             resamplingmethod,
             resamplingthreshold,
@@ -50,7 +58,8 @@ struct SMCDefault{F<:Function, T<:BaytesCore.ResamplingMethod, B<:BaytesCore.Upd
             jitteradaption,
             jitterthreshold,
             jittermin,
-            jittermax
+            jittermax,
+            generated
             )
     end
 end
@@ -97,7 +106,7 @@ function SMC(
 }
     ## Print assumptions to user
     @unpack chains = info
-    @unpack Ntuning, resamplingmethod, resamplingthreshold, jitterfun, jitteradaption, jitterthreshold, jittermin, jittermax = default
+    @unpack Ntuning, resamplingmethod, resamplingthreshold, jitterfun, jitteradaption, jitterthreshold, jittermin, jittermax, generated = default
     Ndata = maximum(size(objective.data))
     #!NOTE: Check if steps after first jitter call can be captured
     capture = Jitterkernel isa MCMCConstructor ? BaytesCore.UpdateFalse() : BaytesCore.UpdateTrue()
@@ -115,7 +124,8 @@ function SMC(
         jitteradaption,
         jitterthreshold,
         jittermin,
-        jittermax
+        jittermax,
+        generated
     )
     ## Initialize SMCParticles
     particles = SMCParticles(_rng, Jitterkernel, objective, info, tune)
@@ -157,7 +167,9 @@ function propose!(
     ESS, resampled = resample!(_rng, smc.particles, smc.tune, data, temperature)
     ## Choose proposal model parameter to update model.val
     path = BaytesFilters.draw!(_rng, smc.particles.weights)
-    model.val = smc.particles.model[path].val
+    ModelWrappers.fill!(model,
+        merge(model.val, ModelWrappers.subset(smc.particles.model[path].val, smc.tune.tagged.parameter))
+    )
     ## Pack and return Models and particles
     return model.val,
     SMCDiagnostics(
@@ -167,6 +179,7 @@ function propose!(
         resampled,
         smc.tune.jitter.Nsteps.current,
         smc.tune.iter.current,
+        ModelWrappers.generate(_rng, Objective(model, data, smc.tune.tagged, temperature), smc.tune.generated)
     )
 end
 

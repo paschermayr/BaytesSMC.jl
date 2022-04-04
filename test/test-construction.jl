@@ -4,7 +4,7 @@ objectives = [
     Objective(ModelWrapper(MyBaseModel(), myparameter1, FlattenDefault()), data_uv),
     Objective(ModelWrapper(MyBaseModel(), myparameter1, FlattenDefault(; output = Float32)), data_uv)
 ]
-
+generated = [UpdateFalse(), UpdateTrue()]
 #=
 iter=1
 =#
@@ -19,21 +19,22 @@ for iter in eachindex(objectives)
         mcmc = MCMC(NUTS,(:μ, :σ,); stepsize = ConfigStepsize(;stepsizeadaption = UpdateFalse()))
         kerneldefault  = SMCDefault(Ntuning = 5, jittermin = 1, jittermax = 5)
         samplingdefault = SampleDefault(chains = 4)
-        smc_c = SMCConstructor(mcmc, SMCDefault())
+        smc_c = SMCConstructor(mcmc, SMCDefault(;generated = generated[iter]))
         smc_c(_rng, _obj.model, _obj.data, _obj.temperature, samplingdefault)
         SMC(_rng, mcmc, _obj, kerneldefault, samplingdefault)
         @test BaytesCore.get_sym(mcmc) == BaytesSMC.get_sym(smc_c)
         ## Propose new parameter
-        smc = SMC(_rng, mcmc, _obj)
+        smc = SMC(_rng, mcmc, _obj, SMCDefault(;generated = generated[iter]))
         vals, diagnostics = propose!(_rng, smc, _obj.model, _obj.data)
         @test eltype(diagnostics.ρ) == _flattentype
         vals, diagnostics = propose!(_rng, smc, _obj.model, _obj.data, _obj.temperature, UpdateFalse())
         @test eltype(diagnostics.ρ) == _flattentype
-
         ## Postprocessing
         generate_showvalues(diagnostics)()
         diagtype = infer(_rng, AbstractDiagnostics, smc, _obj.model, _obj.data)
         @test diagnostics isa diagtype
+        TGenerated = BaytesSMC.infer_generated(_rng, smc, _obj.model, _obj.data)
+        @test diagnostics.generated isa TGenerated
         diags = Vector{diagtype}(undef, 100)
         for iter in eachindex(diags)
             _, diags[iter] = propose!(_rng, smc, _obj.model, _obj.data)

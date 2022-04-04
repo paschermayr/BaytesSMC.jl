@@ -190,7 +190,25 @@ function infer(
     TPrediction = BaytesCore.infer(_rng, smc.particles.kernel[begin], model, data)
     TJitter = BaytesCore.infer(_rng, AbstractDiagnostics, smc.particles.kernel[begin], model, data)
     TTemperature = model.info.flattendefault.output
-    return SMCDiagnostics{TPrediction,TJitter,TTemperature}
+    TGenerated = infer_generated(_rng, smc, model, data)
+    return SMCDiagnostics{TPrediction,TJitter,TTemperature,TGenerated}
+end
+
+############################################################################################
+"""
+$(SIGNATURES)
+Infer type of generated quantities of PF sampler.
+
+# Examples
+```julia
+```
+
+"""
+function infer_generated(
+    _rng::Random.AbstractRNG, smc::SMC, model::ModelWrapper, data::D
+) where {D}
+    objective = Objective(model, data, smc.tune.tagged)
+    return typeof(generate(_rng, objective, smc.tune.generated))
 end
 
 ############################################################################################

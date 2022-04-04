@@ -12,7 +12,8 @@ struct SMCTune{
     F<:Function,
     B<:BaytesCore.UpdateBool,
     R<:BaytesCore.ResamplingMethod,
-    U<:BaytesCore.UpdateBool
+    U<:BaytesCore.UpdateBool,
+    S<:BaytesCore.UpdateBool
     }
     "Tagged Model parameter."
     tagged::T
@@ -32,6 +33,8 @@ struct SMCTune{
     Ntuning::Int64
     "Batchsize for parallel processing of jittering steps."
     batchsize::Int64
+    "Boolean if generated quantities should be generated while sampling"
+    generated::S
     function SMCTune(
         tagged::T,
         Nchains::Int64,
@@ -44,13 +47,15 @@ struct SMCTune{
         jitteradaption::B,
         jitterthreshold::Float64,
         Njitter_min::Integer,
-        Njitter_max::Integer
+        Njitter_max::Integer,
+        generated::S
     ) where {
         T<:Tagged,
         F<:Function,
         B<:BaytesCore.UpdateBool,
         D<:BaytesCore.ResamplingMethod,
-        U<:BaytesCore.UpdateBool
+        U<:BaytesCore.UpdateBool,
+        S<:BaytesCore.UpdateBool
     }
         ## Check input for correctness
         ArgCheck.@argcheck 0 < Ntuning "Number of tuning iterations has to be positive"
@@ -69,8 +74,8 @@ struct SMCTune{
         ## Compute batchsize for parallel processing in resampling step
         batchsize = compute_batchsize(Nchains)
         ## Return SMC tune
-        return new{T, F,B,D,U}(
-            tagged, iter, particletune, resample, jitter, jitterfun, capture, Ntuning, batchsize
+        return new{T,F,B,D,U,S}(
+            tagged, iter, particletune, resample, jitter, jitterfun, capture, Ntuning, batchsize, generated
         )
     end
 end
