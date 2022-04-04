@@ -89,67 +89,71 @@ function results(
         ".")
     ## Rejuvenation steps
     t = convert(Int64, floor(length(diagnosticsᵛ) / 2))
-    println(
-        "Rejuvenations on average every ",
-        round(
-            (
+    if t > 1
+        println(
+            "Rejuvenations on average every ",
+            round(
+                (
+                    1 / (
+                        1 - Statistics.mean(
+                            !diagnosticsᵛ[iter].resampled for iter in eachindex(diagnosticsᵛ)
+                        )
+                    )
+                );
+                digits=Ndigits,
+            ),
+            " step, every ",
+            round(
+                1 / (1 - Statistics.mean(!diagnosticsᵛ[iter].resampled for iter in 1:t));
+                digits=Ndigits,
+            ),
+            " steps in first half, every ",
+            round(
                 1 / (
                     1 - Statistics.mean(
-                        !diagnosticsᵛ[iter].resampled for iter in eachindex(diagnosticsᵛ)
+                        !diagnosticsᵛ[iter].resampled for iter in (t + 1):length(diagnosticsᵛ)
                     )
-                )
-            );
-            digits=Ndigits,
-        ),
-        " step, every ",
-        round(
-            1 / (1 - Statistics.mean(!diagnosticsᵛ[iter].resampled for iter in 1:t));
-            digits=Ndigits,
-        ),
-        " steps in first half, every ",
-        round(
-            1 / (
-                1 - Statistics.mean(
-                    !diagnosticsᵛ[iter].resampled for iter in (t + 1):length(diagnosticsᵛ)
-                )
-            );
-            digits=Ndigits,
-        ),
-        " steps in second half.",
-    )
+                );
+                digits=Ndigits,
+            ),
+            " steps in second half.",
+        )
+    end
     ##Rejuvenation Correlation
     rejuvenations = [diagnosticsᵛ[iter].resampled for iter in eachindex(diagnosticsᵛ)]
-    println(
-        "Quantiles for average rejuvenation correlation of parameter: ",
-        round.(
-            Statistics.quantile(
-                Statistics.mean.(
-                    #!NOTE: If pairs[i] are constant (i.e., all resampled initial parameter come from same index), ρ = NaN for index
-                    #filter(!isnan, diagnosticsᵛ[rejuvenations][iter].ρ) for
-                    diagnosticsᵛ[rejuvenations][iter].ρ for iter in Base.OneTo(sum(rejuvenations))
-                ),
-                quantiles,
-            );
-            digits=Ndigits,
-        ),
-        ".",
-    )
-    println(
-        "Quantiles for average number rejuvenation steps: ",
-        round.(
-            Statistics.quantile(
-                Statistics.mean.(
-                    diagnosticsᵛ[rejuvenations][iter].jittersteps for
-                    iter in Base.OneTo(sum(rejuvenations))
-                ),
-                quantiles,
-            );
-            digits=Ndigits,
-        ),
-        ".",
-    )
+    if sum(rejuvenations) > 0
+        println(
+            "Quantiles for average rejuvenation correlation of parameter: ",
+            round.(
+                Statistics.quantile(
+                    Statistics.mean.(
+                        #!NOTE: If pairs[i] are constant (i.e., all resampled initial parameter come from same index), ρ = NaN for index
+                        #filter(!isnan, diagnosticsᵛ[rejuvenations][iter].ρ) for
+                        diagnosticsᵛ[rejuvenations][iter].ρ for iter in Base.OneTo(sum(rejuvenations))
+                    ),
+                    quantiles,
+                );
+                digits=Ndigits,
+            ),
+            ".",
+        )
+        println(
+            "Quantiles for average number rejuvenation steps: ",
+            round.(
+                Statistics.quantile(
+                    Statistics.mean.(
+                        diagnosticsᵛ[rejuvenations][iter].jittersteps for
+                        iter in Base.OneTo(sum(rejuvenations))
+                    ),
+                    quantiles,
+                );
+                digits=Ndigits,
+            ),
+            ".",
+        )
+    end
     ## ESS quantiles
-    return println(
+    println(
         "Quantiles for ESS: ",
         round.(
             Statistics.quantile(
@@ -161,6 +165,8 @@ function results(
         smc.tune.chains.Nchains,
         " chains.",
     )
+    ## Return
+    return nothing
 end
 
 ############################################################################################

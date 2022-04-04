@@ -25,14 +25,14 @@ struct SMCDefault{F<:Function, T<:BaytesCore.ResamplingMethod, B<:BaytesCore.Upd
     "Maximum number of jittering steps."
     jittermax::Int64
     function SMCDefault(;
-        Ntuning=50,
+        Ntuning=10,
         resamplingmethod::T = BaytesFilters.Systematic(),
         resamplingthreshold=0.75,
         jitterfun::F = maximum,
         jitteradaption::B = BaytesCore.UpdateTrue(),
         jitterthreshold=0.9,
         jittermin=1,
-        jittermax=30
+        jittermax=10
     ) where {
     F<:Function,
     T<:BaytesCore.ResamplingMethod,
