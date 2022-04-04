@@ -8,6 +8,7 @@ objectives = [
 #=
 iter=1
 =#
+
 ############################################################################################
 ## Make model for several parameter types
 for iter in eachindex(objectives)
@@ -19,13 +20,18 @@ for iter in eachindex(objectives)
         kerneldefault  = SMCDefault(Ntuning = 5, jittermin = 1, jittermax = 5)
         samplingdefault = SampleDefault(chains = 4)
         smc_c = SMCConstructor(mcmc, SMCDefault())
+        smc_c(_rng, _obj.model, _obj.data, _obj.temperature, samplingdefault)
         SMC(_rng, mcmc, _obj, kerneldefault, samplingdefault)
         @test BaytesCore.get_sym(mcmc) == BaytesSMC.get_sym(smc_c)
         ## Propose new parameter
         smc = SMC(_rng, mcmc, _obj)
         vals, diagnostics = propose!(_rng, smc, _obj.model, _obj.data)
         @test eltype(diagnostics.ρ) == _flattentype
+        vals, diagnostics = propose!(_rng, smc, _obj.model, _obj.data, _obj.temperature, UpdateFalse())
+        @test eltype(diagnostics.ρ) == _flattentype
+
         ## Postprocessing
+        generate_showvalues(diagnostics)()
         diagtype = infer(_rng, AbstractDiagnostics, smc, _obj.model, _obj.data)
         @test diagnostics isa diagtype
         diags = Vector{diagtype}(undef, 100)
