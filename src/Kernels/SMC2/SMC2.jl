@@ -9,7 +9,12 @@ struct SMC2Constructor{W<:AbstractConstructor,J<:AbstractConstructor} <:Abstract
     end
 end
 function get_sym(constructor::SMC2Constructor)
-    return get_sym(constructor.jitter)
+#    return get_sym(constructor.jitter)
+    sym1 = get_sym(constructor.jitter)
+    sym2 = get_sym(constructor.propagation)
+    #Return unique symbols as tuple
+    sym = unique((sym1..., sym2...))
+    return Tuple(sym)
 end
 
 function SMC2(

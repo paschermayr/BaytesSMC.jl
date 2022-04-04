@@ -62,8 +62,8 @@ end
 function update!(particles::SMCParticles, model::ModelWrapper, tagged::Tagged, upd::BaytesCore.UpdateTrue)
     # Update parameter particles that are not tagged
     for iter in eachindex(particles.model)
-        particles.model[iter].val = merge(
-            model.val, ModelWrappers.subset(particles.model[iter].val, tagged.parameter)
+        ModelWrappers.fill!(particles.model[iter],
+            merge(model.val, ModelWrappers.subset(particles.model[iter].val, tagged.parameter))
         )
     end
     return nothing
