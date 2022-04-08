@@ -131,17 +131,6 @@ Propagate data forward over time. If (latent) data has to be extended, need to o
 
 """
 function propagate!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTune, data::D, temperature::F) where {D, F<:AbstractFloat}
-    ## Propagate series forward with recent particle
-#=
-    for iter in eachindex(particles.model)
-        ## Predict new data point
-        particles.buffer.predictions[iter] = ModelWrappers.predict(
-            _rng,
-            Objective(particles.model[iter], data, tune.tagged, temperature)
-        )
-    end
-    #!NOTE: Here, particles.buffer.jitterdiagnostics will not be updated, and for SMCDiagnostics, last available jitterdiagnostics are provided.
-=#
     return nothing
 end
 

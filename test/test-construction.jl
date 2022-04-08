@@ -13,7 +13,7 @@ iter=1
 ## Make model for several parameter types
 for iter in eachindex(objectives)
     _obj = objectives[iter]
-    _flattentype = _obj.model.info.flattendefault.output
+    _flattentype = _obj.model.info.reconstruct.default.output
     @testset "Kernel construction and propagation, ASMC with MCMC" begin
         ## MCMC
         mcmc = MCMC(NUTS,(:μ, :σ,); stepsize = ConfigStepsize(;stepsizeadaption = UpdateFalse()))
@@ -85,7 +85,7 @@ end
 ## Check IBIS
 for iter in eachindex(objectives)
     _obj = objectives[iter]
-    _flattentype = _obj.model.info.flattendefault.output
+    _flattentype = _obj.model.info.reconstruct.default.output
     @testset "Kernel construction and propagation, IBIS" begin
         ## Assign smc kernel ~ use PMCMC to check both MCMC and Particle Filter
         ## MCMC
@@ -150,6 +150,8 @@ end
     ## Postprocessing
     diagtype = infer(_rng, AbstractDiagnostics, smc, _obj.model, _obj.data)
     @test diagnostics isa diagtype
+
+    _obj = Objective(deepcopy(mymodel), data_init)
     smc = SMC(_rng, smc2, _obj)
     diags = Vector{diagtype}(undef, 100)
     for iter in eachindex(diags)

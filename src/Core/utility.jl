@@ -94,10 +94,10 @@ struct SMCBuffer{M<:NamedTuple,I<:Integer,L<:ℓObjectiveResult,T<:AbstractFloat
         result = BaytesCore.get_result(kernel)
         Nparams = length(result.θᵤ)
         # Assign weights buffer for particle
-        cumweights = zeros(model.info.flattendefault.output, Nchains)
+        cumweights = zeros(model.info.reconstruct.default.output, Nchains)
         # Assign weights, buffer for parameter and correlation
         parameter = BaytesCore.ModelParameterBuffer(model, result, Nchains, ancestortype)
-        correlation = CorrelationBuffer(Nparams, Nchains, model.info.flattendefault.output)
+        correlation = CorrelationBuffer(Nparams, Nchains, model.info.reconstruct.default.output)
         # Assign buffer for predictions
         TPrediction = BaytesCore.infer(_rng, kernel, model, data)
         predictions = Vector{TPrediction}(undef, Nchains)
