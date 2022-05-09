@@ -34,7 +34,7 @@ struct SMCDefault{
     function SMCDefault(;
         Ntuning=10,
         resamplingmethod::T = BaytesFilters.Systematic(),
-        resamplingthreshold=0.75,
+        resamplingthreshold=0.9,
         jitterfun::F = maximum,
         jitteradaption::B = BaytesCore.UpdateTrue(),
         jitterthreshold=0.9,
