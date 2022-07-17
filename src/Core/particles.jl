@@ -51,7 +51,7 @@ function SMCParticles(
     modelᵗᵉᵐᵖ = deepcopy(objective.model)
     ## Initialize individual Models ~ Assign copies for  Model and Algorithms ~ necessary in initiation so no pointer error
     modelᵛ = [
-        ModelWrapper(deepcopy(modelᵗᵉᵐᵖ.val), modelᵗᵉᵐᵖ.arg, modelᵗᵉᵐᵖ.info, modelᵗᵉᵐᵖ.id) for
+        ModelWrapper(deepcopy(modelᵗᵉᵐᵖ.val), deepcopy(modelᵗᵉᵐᵖ.arg), modelᵗᵉᵐᵖ.info, modelᵗᵉᵐᵖ.id) for
         _ in Base.OneTo(Nchains)
     ]
     algorithmᵛ = [JitterKernel(_rng, modelᵛ[iter], data, temperature, info) for iter in Base.OneTo(Nchains)]
