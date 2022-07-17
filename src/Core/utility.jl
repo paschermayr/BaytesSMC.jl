@@ -41,7 +41,7 @@ Compute inplace the correlation between old parameter vectors `pairs` and new pa
 function compute_ρ!(
     ρ::Vector{T},
     pairs::Vector{Vector{F}},
-    result::Vector{<:ModelWrappers.ℓObjectiveResult},
+    result::Vector{<:BaytesDiff.ℓObjectiveResult},
     algorithmᵛ,
     ϵ = 1e-10
 ) where {T<:AbstractFloat,F<:Real}
@@ -58,7 +58,7 @@ function compute_ρ!(
     end
     return ρ
 end
-function compute_ρ!(buffer::CorrelationBuffer, result::Vector{<:ModelWrappers.ℓObjectiveResult}, algorithmᵛ)
+function compute_ρ!(buffer::CorrelationBuffer, result::Vector{<:BaytesDiff.ℓObjectiveResult}, algorithmᵛ)
     return compute_ρ!(buffer.ρ, buffer.pairs, result, algorithmᵛ)
 end
 

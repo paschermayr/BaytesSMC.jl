@@ -1,8 +1,8 @@
 ############################################################################################
 # Models to be used in construction
 objectives = [
-    Objective(ModelWrapper(MyBaseModel(), myparameter1, FlattenDefault()), data_uv),
-    Objective(ModelWrapper(MyBaseModel(), myparameter1, FlattenDefault(; output = Float32)), data_uv)
+    Objective(ModelWrapper(MyBaseModel(), myparameter1, (;), FlattenDefault()), data_uv),
+    Objective(ModelWrapper(MyBaseModel(), myparameter1, (;), FlattenDefault(; output = Float32)), data_uv)
 ]
 generated = [UpdateFalse(), UpdateTrue()]
 #=

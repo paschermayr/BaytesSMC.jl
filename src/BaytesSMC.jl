@@ -54,11 +54,15 @@ using ModelWrappers:
     ModelWrappers,
     ModelWrapper,
     Tagged,
-    Objective,
+    Objective
+
+using BaytesDiff:
+    BaytesDiff,
     DiffObjective,
     ℓObjectiveResult,
     ℓDensityResult,
     ℓGradientResult
+    
 import ModelWrappers: predict, generate, dynamics
 
 import BaytesFilters: ParticleKernel
