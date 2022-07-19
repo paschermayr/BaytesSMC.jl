@@ -8,6 +8,7 @@ struct SMC2Constructor{W<:AbstractConstructor,J<:AbstractConstructor} <:Abstract
         return new{W,J}(propagation, jitter)
     end
 end
+
 function get_sym(constructor::SMC2Constructor)
     sym1 = get_sym(constructor.jitter)
     sym2 = get_sym(constructor.propagation)
@@ -40,6 +41,20 @@ struct SMC2Kernel{P<:ParticleFilter,M<:PMCMC} <: BaytesCore.AbstractAlgorithm
         @argcheck isa(pf.tune.referencing, Marginal) "Cannot use Conditional Filter in θ dimension, use Marginal referencing instead"
         return new{P,M}(pf, pmcmc)
     end
+end
+
+function (constructor::SMC2Constructor)(
+    _rng::Random.AbstractRNG,
+    model::ModelWrapper,
+    data::D,
+    temperature::F,
+    info::BaytesCore.SampleDefault
+) where {D, F<:AbstractFloat}
+    @unpack propagation, jitter = constructor
+    # Start with jitter kernel in case model parameter are sampled from prior, then initialize propagation kernel
+    _jitter = jitter(_rng, model, data, temperature, info)
+    _propagation = propagation(_rng, model, data, temperature, info)
+    return SMC2Kernel(_propagation, _jitter)
 end
 
 function result!(kernel::SMC2Kernel, result::L) where {L<:ℓObjectiveResult}
@@ -113,13 +128,13 @@ function SMCParticles(
     info::BaytesCore.SampleDefault,
     tune::SMCTune
 )
-    @unpack propagation, jitter = kernel
+#    @unpack propagation, jitter = kernel
     ## Initialize individual PF and PMCMC algorithm
     @unpack model, data, temperature = objective
     @unpack Ntuning = tune
     Nchains = tune.chains.Nchains
     modelᵗᵉᵐᵖ = deepcopy(model)
-    tagged = Tagged(model, propagation.sym)
+    tagged = Tagged(model, kernel.propagation.sym)
     ModelWrappers.fill!(
         modelᵗᵉᵐᵖ,
         tagged,
@@ -130,12 +145,8 @@ function SMCParticles(
     )
     ## Initialize individual Models ~ Assign copies for  Model and Algorithms ~ necessary in initiation so no pointer error
     modelᵛ = [deepcopy(modelᵗᵉᵐᵖ) for _ in Base.OneTo(Nchains)]
-    algorithmᵛ = [
-        SMC2Kernel(
-            propagation(_rng, modelᵛ[iter], data, temperature, info),
-            jitter(_rng, modelᵛ[iter], data, temperature, info),
-        ) for iter in Base.OneTo(Nchains)
-    ]
+    algorithmᵛ = [kernel(_rng, modelᵛ[iter], data, temperature, info) for iter in Base.OneTo(Nchains)]
+
     ## Assign weights
     weights = BaytesCore.ParameterWeights(Nchains)
     ## Assign buffer for inplace resampling

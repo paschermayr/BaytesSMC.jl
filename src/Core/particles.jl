@@ -49,7 +49,7 @@ function SMCParticles(
     Nchains = tune.chains.Nchains
     ## Adjust observed data to current knowledge
     modelᵗᵉᵐᵖ = deepcopy(objective.model)
-    ## Initialize individual Models ~ Assign copies for  Model and Algorithms ~ necessary in initiation so no pointer error
+    ## Initialize individual Models ~ Assign copies for  Model and Algorithms - info and id can be shared ~ necessary in initiation so no pointer issues
     modelᵛ = [
         ModelWrapper(deepcopy(modelᵗᵉᵐᵖ.val), deepcopy(modelᵗᵉᵐᵖ.arg), modelᵗᵉᵐᵖ.info, modelᵗᵉᵐᵖ.id) for
         _ in Base.OneTo(Nchains)
@@ -65,6 +65,7 @@ function SMCParticles(
     #Polyester.@batch per=thread minbatch=tune.batchsize
     Base.Threads.@threads for iter in eachindex(algorithmᵛ)
         ## Tune kernel
+        #Update kernel for first iteration
         propose!(_rng, algorithmᵛ[iter], modelᵛ[iter], data, temperature, BaytesCore.UpdateTrue())
         for _ in 2:Ntuning
             propose!(_rng, algorithmᵛ[iter], modelᵛ[iter], data, temperature, tune.capture)
