@@ -188,7 +188,13 @@ function infer(
 ) where {D}
     #Pick one of the kernels to obtain type for prediction and jittering diagnostics.
     TPrediction = BaytesCore.infer(_rng, smc.particles.kernel[begin], model, data)
-    TJitter = BaytesCore.infer(_rng, AbstractDiagnostics, smc.particles.kernel[begin], model, data)
+
+    #Depends if jitter diagnostics should be recorded
+    if isa(smc.tune.jitterdiagnostics, BaytesCore.UpdateTrue)
+        TJitter = BaytesCore.infer(_rng, AbstractDiagnostics, smc.particles.kernel[begin], model, data)
+    else
+        TJitter = Nothing
+    end
     TTemperature = model.info.reconstruct.default.output
     TGenerated = infer_generated(_rng, smc, model, data)
     return SMCDiagnostics{TPrediction,TJitter,TTemperature,TGenerated}

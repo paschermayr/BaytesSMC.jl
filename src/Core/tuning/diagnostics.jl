@@ -14,7 +14,7 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat,G} <: AbstractDiagnostics
     ℓincrement::Float64
     "Log weights for resampling steps."
     ℓweights::Vector{Float64}
-    "Normalized Log weights."
+    "Normalized Log weights. They might be adjusted from previous iterations, so will differ from ℓweights."
     ℓweightsₙ::Vector{Float64}
     "Diagnostics of jitter steps. If not resampled this iteration (i.e., resampled == false), contains jitterdiagnostics from previous step."
     jitterdiagnostics::Vector{J}

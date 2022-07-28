@@ -62,7 +62,7 @@ using BaytesDiff:
     ℓObjectiveResult,
     ℓDensityResult,
     ℓGradientResult
-    
+
 import ModelWrappers: predict, generate, dynamics
 
 import BaytesFilters: ParticleKernel

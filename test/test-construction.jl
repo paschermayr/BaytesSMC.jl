@@ -40,8 +40,14 @@ for iter in eachindex(objectives)
             _, diags[iter] = propose!(_rng, smc, _obj.model, _obj.data)
         end
         results(diags, smc, 2, [.1, .2, .5, .8, .9])
+
+        ## Check if Jitterdiagnostics in kernel
+        smc = SMC(_rng, mcmc, _obj, SMCDefault(;jitterdiagnostics = UpdateTrue(), generated = generated[iter]))
+        vals, diagnostics = propose!(_rng, smc, _obj.model, _obj.data)
+        @test !isa(diagnostics.jitterdiagnostics, Vector{Nothing})
     end
 end
+
 
 @testset "Kernel construction and propagation, ASMC with PMCMC" begin
     ## MCMC
@@ -107,6 +113,7 @@ for iter in eachindex(objectives)
         diagtype = infer(_rng, AbstractDiagnostics, smc, _obj.model, _obj.data)
         @test diagnostics isa diagtype
         datadiff = length(_obj.data) - length(_obj2.data) - 1
+
         diags = Vector{diagtype}(undef, datadiff)
         for iter in eachindex(diags)
             data_temp = _obj.data[1:(length(_obj2.data) + iter)]
@@ -166,4 +173,11 @@ end
         )
     end
     results(diags, smc, 2, [.1, .2, .5, .8, .9])
+
+
+    ## Check if Jitterdiagnostics in kernel
+    _obj = Objective(deepcopy(mymodel), data_init)
+    smc = SMC(_rng, smc2, _obj, SMCDefault(;jitterdiagnostics = UpdateTrue(),))
+    vals, diagnostics = propose!(_rng, smc, _obj.model, data[1:length(data_init)+1])
+    @test !isa(diagnostics.jitterdiagnostics, Vector{Nothing})
 end

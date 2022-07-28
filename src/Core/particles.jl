@@ -88,7 +88,7 @@ end
 
 ############################################################################################
 function SMCDiagnostics(
-    smc::SMCParticles, temperature::T, ESS::Float64, accepted::Bool, jittersteps::Int64, iter::Int64, generated::G
+    smc::SMCParticles, temperature::T, ESS::Float64, accepted::Bool, jittersteps::Int64, iter::Int64, generated::G, jitterdiag::UpdateTrue
 ) where {T<:AbstractFloat, G}
     return SMCDiagnostics(
         BaytesCore.BaseDiagnostics(
@@ -102,6 +102,28 @@ function SMCDiagnostics(
         copy(smc.buffer.cumweights),
         copy(smc.weights.ℓweightsₙ),
         deepcopy(smc.buffer.jitterdiagnostics),
+        jittersteps,
+        copy(smc.buffer.correlation.ρ),
+        ESS,
+        accepted,
+        generated
+    )
+end
+function SMCDiagnostics(
+    smc::SMCParticles, temperature::T, ESS::Float64, accepted::Bool, jittersteps::Int64, iter::Int64, generated::G, jitterdiag::UpdateFalse
+) where {T<:AbstractFloat, G}
+    return SMCDiagnostics(
+        BaytesCore.BaseDiagnostics(
+            Statistics.mean(smc.buffer.cumweights),
+            temperature,
+            copy(smc.buffer.predictions),
+            iter-1
+        ),
+        BaytesCore.weightedincrement(smc.weights),
+        #!NOTE: There is not really any way around making a copy from buffer if no pointer issue for diagnostics
+        copy(smc.buffer.cumweights),
+        copy(smc.weights.ℓweightsₙ),
+        [nothing],
         jittersteps,
         copy(smc.buffer.correlation.ρ),
         ESS,

@@ -11,6 +11,7 @@ struct SMCTune{
     T<:Tagged,
     F<:Function,
     B<:BaytesCore.UpdateBool,
+    C<:BaytesCore.UpdateBool,
     R<:BaytesCore.ResamplingMethod,
     U<:BaytesCore.UpdateBool,
     S<:BaytesCore.UpdateBool
@@ -27,6 +28,8 @@ struct SMCTune{
     jitter::BaytesCore.JitterTune{B}
     "Determines number of jittering steps in jitter kernel."
     jitterfun::F
+    "Boolean if diagnostics in jittersteps should be recorded in SMCDiagnostics."
+    jitterdiagnostics::C
     "UpdateBool if parameter can be captured after initial jitter step."
     capture::U
     "Number of warmup Tuning steps for kernels."
@@ -45,6 +48,7 @@ struct SMCTune{
         capture::U,
         jitterfun::F,
         jitteradaption::B,
+        jitterdiagnostics::C,
         jitterthreshold::Float64,
         Njitter_min::Integer,
         Njitter_max::Integer,
@@ -53,6 +57,7 @@ struct SMCTune{
         T<:Tagged,
         F<:Function,
         B<:BaytesCore.UpdateBool,
+        C<:BaytesCore.UpdateBool,
         D<:BaytesCore.ResamplingMethod,
         U<:BaytesCore.UpdateBool,
         S<:BaytesCore.UpdateBool
@@ -74,8 +79,8 @@ struct SMCTune{
         ## Compute batchsize for parallel processing in resampling step
         batchsize = compute_batchsize(Nchains)
         ## Return SMC tune
-        return new{T,F,B,D,U,S}(
-            tagged, iter, particletune, resample, jitter, jitterfun, capture, Ntuning, batchsize, generated
+        return new{T,F,B,C,D,U,S}(
+            tagged, iter, particletune, resample, jitter, jitterfun, jitterdiagnostics, capture, Ntuning, batchsize, generated
         )
     end
 end

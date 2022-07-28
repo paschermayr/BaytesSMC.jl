@@ -14,7 +14,7 @@ using
     BaytesFilters,
     BaytesPMCMC,
     BaytesSMC
-
+#using .BaytesSMC
 ############################################################################################
 # Include Files
 include("testhelper/TestHelper.jl")

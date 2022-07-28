@@ -11,6 +11,7 @@ struct SMCDefault{
     F<:Function,
     T<:BaytesCore.ResamplingMethod,
     B<:BaytesCore.UpdateBool,
+    C<:BaytesCore.UpdateBool,
     U<:BaytesCore.UpdateBool
 }
     "Number of tuning steps used when constructing sampler."
@@ -23,6 +24,8 @@ struct SMCDefault{
     jitterfun::F
     "Boolean if fixed number of jittersteps are applied or jittering is based on parameter correlation."
     jitteradaption::B
+    "Boolean if diagnostics in jittersteps should be recorded in SMCDiagnostics."
+    jitterdiagnostics::C
     "Stopping threshold against mean correlation of jittered model parameter."
     jitterthreshold::Float64
     "Minimum number of jittering steps."
@@ -34,28 +37,32 @@ struct SMCDefault{
     function SMCDefault(;
         Ntuning=10,
         resamplingmethod::T = BaytesFilters.Systematic(),
-        resamplingthreshold=0.9,
+        resamplingthreshold=0.75,
         jitterfun::F = maximum,
         jitteradaption::B = BaytesCore.UpdateTrue(),
+        jitterdiagnostics::C = BaytesCore.UpdateFalse(),
         jitterthreshold=0.9,
         jittermin=1,
         jittermax=10,
-        generated=BaytesCore.UpdateFalse(),
+        generated::U=BaytesCore.UpdateFalse(),
     ) where {
     F<:Function,
     T<:BaytesCore.ResamplingMethod,
-    B<:BaytesCore.UpdateBool
+    B<:BaytesCore.UpdateBool,
+    C<:BaytesCore.UpdateBool,
+    U<:BaytesCore.UpdateBool
     }
         ArgCheck.@argcheck 0 < Ntuning
         ArgCheck.@argcheck 0.0 <= resamplingthreshold <= 1.0
         ArgCheck.@argcheck 0.0 <= jitterthreshold <= 1.0
         ArgCheck.@argcheck 0 < jittermin <= jittermax
-        return new{F, T, B, typeof(generated)}(
+        return new{F, T, B, C, U}(
             Ntuning,
             resamplingmethod,
             resamplingthreshold,
             jitterfun,
             jitteradaption,
+            jitterdiagnostics,
             jitterthreshold,
             jittermin,
             jittermax,
@@ -106,7 +113,7 @@ function SMC(
 }
     ## Print assumptions to user
     @unpack chains = info
-    @unpack Ntuning, resamplingmethod, resamplingthreshold, jitterfun, jitteradaption, jitterthreshold, jittermin, jittermax, generated = default
+    @unpack Ntuning, resamplingmethod, resamplingthreshold, jitterfun, jitteradaption, jitterdiagnostics, jitterthreshold, jittermin, jittermax, generated = default
     Ndata = maximum(size(objective.data))
     #!NOTE: Check if steps after first jitter call can be captured
     capture = Jitterkernel isa MCMCConstructor ? BaytesCore.UpdateFalse() : BaytesCore.UpdateTrue()
@@ -122,6 +129,7 @@ function SMC(
         capture,
         jitterfun,
         jitteradaption,
+        jitterdiagnostics,
         jitterthreshold,
         jittermin,
         jittermax,
@@ -179,7 +187,8 @@ function propose!(
         resampled,
         smc.tune.jitter.Nsteps.current,
         smc.tune.iter.current,
-        ModelWrappers.generate(_rng, Objective(model, data, smc.tune.tagged, temperature), smc.tune.generated)
+        ModelWrappers.generate(_rng, Objective(model, data, smc.tune.tagged, temperature), smc.tune.generated),
+        smc.tune.jitterdiagnostics
     )
 end
 
