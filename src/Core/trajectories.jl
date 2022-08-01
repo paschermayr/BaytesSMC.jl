@@ -50,7 +50,7 @@ function resample!(
         Base.fill!(particles.weights.ℓweightsₙ, log(1.0 / tune.chains.Nchains))
         ## Reshuffle θ and rejuvenation particles - can be done inplace via buffer
         #!NOTE: Also set cumulative particle weights smc.buffer.weights back to correct position
-        BaytesCore.shuffle!(particles.buffer.parameter, particles.kernel, particles.model, particles.buffer.cumweights)
+        BaytesCore.shuffle!(particles.buffer.parameter, particles.model, particles.buffer.cumweights) #particles.kernel, 
         ## Rejuvenate Particles
         jitter!(_rng, particles, tune, data, temperature)
         ## Reweight ℓweights used for tempering so have correct index and temperature for next iteration
@@ -75,6 +75,7 @@ function jitter!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTun
     ## Make first jitter step, update for new data and shuffled parameter
     Base.Threads.@threads for iter in eachindex(particles.kernel)
         ## Propose new parameter
+        #!NOTE: UpdateTrue() ensures that MCMC Kernel's LogDensityResult is updated with new particles.model[iter] parameter
         _, particles.buffer.jitterdiagnostics[iter] = propose!(
             _rng,
             jitterkernel(particles, iter),

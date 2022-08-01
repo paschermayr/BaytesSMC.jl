@@ -189,7 +189,6 @@ Propagate data forward over time.
 
 """
 function propagate!(_rng::Random.AbstractRNG, particles::SMCParticles{<:SMC2Kernel}, tune::SMCTune, data::D, temperature::F) where {D, F<:AbstractFloat}
-    #!NOTE: Here, smc.buffer.jitterdiagnostics will not be updated, and for SMCDiagnostics, last available jitterdiagnostics are provided.
     ## Propagate series forward with recent particle
     #Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(particles.model)
     Base.Threads.@threads for iter in eachindex(particles.model)
