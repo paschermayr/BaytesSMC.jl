@@ -31,7 +31,7 @@ end
 
 """
 $(SIGNATURES)
-Compute inplace the correlation between old parameter vectors `pairs` and new parameter vectors `result`.
+Compute inplace the correlation between old parameter vectors `valᵤ` and new parameter vectors from 'algorithmᵛ'.
 
 # Examples
 ```julia
@@ -41,13 +41,13 @@ Compute inplace the correlation between old parameter vectors `pairs` and new pa
 function compute_ρ!(
     ρ::Vector{T},
     pairs::Vector{Vector{F}},
-    result::Vector{<:BaytesDiff.ℓObjectiveResult},
+    valᵤ::Vector{Vector{S}},
     algorithmᵛ,
     ϵ = 1e-10
-) where {T<:AbstractFloat,F<:Real}
+) where {S<:Real, T<:AbstractFloat,F<:Real}
     for iter in eachindex(ρ)
-        for chain in eachindex(result)
-            pairs[1][chain] = result[chain].θᵤ[iter]
+        for chain in eachindex(valᵤ)
+            pairs[1][chain] = valᵤ[chain][iter]
             pairs[2][chain] = BaytesCore.get_result(algorithmᵛ[chain]).θᵤ[iter]
         end
         #Assign a small value at start of index for temporary starting point pair[1]
@@ -58,8 +58,8 @@ function compute_ρ!(
     end
     return ρ
 end
-function compute_ρ!(buffer::CorrelationBuffer, result::Vector{<:BaytesDiff.ℓObjectiveResult}, algorithmᵛ)
-    return compute_ρ!(buffer.ρ, buffer.pairs, result, algorithmᵛ)
+function compute_ρ!(buffer::CorrelationBuffer, valᵤ::Vector{Vector{S}}, algorithmᵛ) where {S<:Real}
+    return compute_ρ!(buffer.ρ, buffer.pairs, valᵤ, algorithmᵛ)
 end
 
 ############################################################################################
@@ -71,11 +71,11 @@ Buffer struct to inplace store intermediate values.
 # Fields
 $(TYPEDFIELDS)
 """
-struct SMCBuffer{M<:NamedTuple,I<:Integer,L<:ℓObjectiveResult,T<:AbstractFloat,F<:AbstractFloat,P,J}
+struct SMCBuffer{M<:NamedTuple,I<:Integer,L<:Real,T<:AbstractFloat,F<:AbstractFloat,P,J}
     "Buffer for cumulative particle weights at each iteration, such that they can be used again next iteration after resampling step."
     cumweights::Vector{T}
     "Buffer for model parameter and reweighting statistics."
-    parameter::BaytesCore.ModelParameterBuffer{M, I, L, T}
+    parameter::BaytesCore.ModelParameterBuffer{M, L, T, I}
     "Buffer to compute correlation between original and jittered parameter."
     correlation::CorrelationBuffer{F}
     "Predictions"
@@ -96,7 +96,7 @@ struct SMCBuffer{M<:NamedTuple,I<:Integer,L<:ℓObjectiveResult,T<:AbstractFloat
         # Assign weights buffer for particle
         cumweights = zeros(model.info.reconstruct.default.output, Nchains)
         # Assign weights, buffer for parameter and correlation
-        parameter = BaytesCore.ModelParameterBuffer(model, result, Nchains, ancestortype)
+        parameter = BaytesCore.ModelParameterBuffer(model, Nchains, Nparams, model.info.reconstruct.default.output, ancestortype)
         correlation = CorrelationBuffer(Nparams, Nchains, model.info.reconstruct.default.output)
         # Assign buffer for predictions
         TPrediction = BaytesCore.infer(_rng, kernel, model, data)
@@ -107,7 +107,7 @@ struct SMCBuffer{M<:NamedTuple,I<:Integer,L<:ℓObjectiveResult,T<:AbstractFloat
         return new{
             typeof(model.val),
             eltype(parameter.index),
-            typeof(result),
+            eltype(result.θᵤ),
             eltype(parameter.weight),
             eltype(correlation.ρ),
             TPrediction,

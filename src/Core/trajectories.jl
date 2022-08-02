@@ -50,7 +50,7 @@ function resample!(
         Base.fill!(particles.weights.ℓweightsₙ, log(1.0 / tune.chains.Nchains))
         ## Reshuffle θ and rejuvenation particles - can be done inplace via buffer
         #!NOTE: Also set cumulative particle weights smc.buffer.weights back to correct position
-        BaytesCore.shuffle!(particles.buffer.parameter, particles.model, particles.buffer.cumweights) #particles.kernel, 
+        BaytesCore.shuffle!(particles.buffer.parameter, particles.model, particles.kernel, particles.buffer.cumweights) #particles.kernel,
         ## Rejuvenate Particles
         jitter!(_rng, particles, tune, data, temperature)
         ## Reweight ℓweights used for tempering so have correct index and temperature for next iteration
@@ -90,7 +90,7 @@ function jitter!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTun
         )
     end
     # Calculate Correlation between old and new θ particles
-    compute_ρ!(particles.buffer.correlation, particles.buffer.parameter.result, particles.kernel)
+    compute_ρ!(particles.buffer.correlation, particles.buffer.parameter.valᵤ, particles.kernel)
     # Check if jittering can be stopped
     jitter = BaytesCore.jitter!(tune.jitter, tune.jitterfun(particles.buffer.correlation.ρ))
     ## If more than one jitterstep has to be performed, previous results might be captured depending on the kernel.
@@ -114,7 +114,7 @@ function jitter!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTun
             )
         end
         ## Calculate Correlation between old and new θ particles
-        compute_ρ!(particles.buffer.correlation, particles.buffer.parameter.result, particles.kernel)
+        compute_ρ!(particles.buffer.correlation, particles.buffer.parameter.valᵤ, particles.kernel)
         ## Check if jittering can be stopped
         jitter = jitter!(tune.jitter, tune.jitterfun(particles.buffer.correlation.ρ))
     end
