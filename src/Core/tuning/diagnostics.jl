@@ -10,11 +10,13 @@ $(TYPEDFIELDS)
 struct SMCDiagnostics{P,J,T<:AbstractFloat,G} <: AbstractDiagnostics
     "Diagnostics used for all Baytes kernels"
     base::BaytesCore.BaseDiagnostics{Vector{P}}
-    "Weighted average of incremental log weights - can be used for marginal likelihood computation."
+    "Weighted average of incremental log weights - can be used for marginal or log predictive likelihood computation."
     ℓincrement::Float64
-    "Log weights for resampling steps."
+    "Cumulative log weights. If resampled, updated with jittered parameter - as weights will be used for tempering."
     ℓweights::Vector{Float64}
-    "Normalized Log weights. They might be adjusted from previous iterations, so will differ from ℓweights."
+    "Log weights at current iteration, used for resampling criterion. NOT updated with jittered theta parameter as ℓweightsₜ depends on t-1 and jittered theta parameter come in at next iteration."
+    ℓweightsₜ::Vector{Float64}
+    "Normalized Log weights. They might be adjusted from previous iterations, so will differ from ℓweights. Will be set to log(1/N) if resampling applied."
     ℓweightsₙ::Vector{Float64}
     "Diagnostics of jitter steps. If not resampled this iteration (i.e., resampled == false), contains jitterdiagnostics from previous step."
     jitterdiagnostics::Vector{J}
@@ -32,6 +34,7 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat,G} <: AbstractDiagnostics
         base::BaytesCore.BaseDiagnostics{Vector{P}},
         ℓincrement::Float64,
         ℓweights::Vector{Float64},
+        ℓweightsₜ::Vector{Float64},
         ℓweightsₙ::Vector{Float64},
         jitterdiagnostics::Vector{J},
         jittersteps::Int64,
@@ -44,6 +47,7 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat,G} <: AbstractDiagnostics
             base,
             ℓincrement,
             ℓweights,
+            ℓweightsₜ,
             ℓweightsₙ,
             jitterdiagnostics,
             jittersteps,

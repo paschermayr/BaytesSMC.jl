@@ -170,6 +170,9 @@ function propose!(
     predict!(_rng, smc.particles, smc.tune, data, temperature)
     ## Adjust weights with log likelihood INCREMENT at time t
     weight!(_rng, smc.particles, smc.tune, data, temperature)
+    ## Compute weighted average of incremental log weights - can be used for marginal or log predictive likelihood computation.
+    #!NOTE: Computed before resampling, where normalized weights are adjusted for next iteration
+    ℓincrement = BaytesCore.weightedincrement(smc.particles.weights)
     ## Resample and jitter particles if criterion fulfilled
     #!NOTE: Cannot use resample before propagate! (as in pf) as previous temperature otherwise unknown
     ESS, resampled = resample!(_rng, smc.particles, smc.tune, data, temperature)
@@ -182,6 +185,7 @@ function propose!(
     return model.val,
     SMCDiagnostics(
         smc.particles,
+        ℓincrement,
         temperature,
         ESS,
         resampled,
