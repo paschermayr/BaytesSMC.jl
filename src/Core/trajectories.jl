@@ -73,6 +73,7 @@ Jitter θ particles with given kernels. This is performed in 2 stages:
 """
 function jitter!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTune, data::D, temperature::F) where {D, F<:AbstractFloat}
     ## Make first jitter step, update for new data and shuffled parameter
+#    Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(particles.kernel)
     Base.Threads.@threads for iter in eachindex(particles.kernel)
         ## Propose new parameter
         #!NOTE: UpdateTrue() ensures that MCMC Kernel's LogDensityResult is updated with new particles.model[iter] parameter
@@ -97,6 +98,7 @@ function jitter!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTun
     #!NOTE buffer.parameter.result.θᵤ at correct place because jitter! only happens after shuffle!
     while jitter
         ## Jitter Particles
+#        Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(particles.kernel)
         Base.Threads.@threads for iter in eachindex(particles.kernel)
             ## Propose new parameter
             #!TODO: This is only true in the first call though, if more than 1 step jittered, MCMC only kernels could be set to UpdateFalse()

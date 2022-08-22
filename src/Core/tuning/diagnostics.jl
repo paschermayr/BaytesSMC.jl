@@ -15,6 +15,7 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat,G} <: AbstractDiagnostics
     "Cumulative log weights. If resampled, updated with jittered parameter - as weights will be used for tempering."
     ℓweights::Vector{Float64}
     "Log weights at current iteration, used for resampling criterion. NOT updated with jittered theta parameter as ℓweightsₜ depends on t-1 and jittered theta parameter come in at next iteration."
+    #!NOTE: ℓweightsₜ are not updated in jittering step - in pf, we resample then propagate, in smc, we propagate then resample -> so at next iteration will have log weights at t from jittered theta 
     ℓweightsₜ::Vector{Float64}
     "Normalized Log weights. They might be adjusted from previous iterations, so will differ from ℓweights. Will be set to log(1/N) if resampling applied."
     ℓweightsₙ::Vector{Float64}

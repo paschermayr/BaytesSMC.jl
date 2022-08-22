@@ -154,7 +154,8 @@ function SMCParticles(
         _rng, algorithmᵛ[1].pmcmc, modelᵗᵉᵐᵖ, data, Nchains
     )
     ## Loop through all models
-    #Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(algorithmᵛ)
+    #!NOTE: Polyester may change type to StridedArray, which is not supported in SMC kernel INITIATION
+#    Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(algorithmᵛ)
     Base.Threads.@threads for iter in eachindex(algorithmᵛ)
         ## Tune PMCMC algorithm
         propose!(_rng, algorithmᵛ[iter].pmcmc, modelᵛ[iter], data, temperature, BaytesCore.UpdateTrue())
@@ -190,7 +191,7 @@ Propagate data forward over time.
 """
 function propagate!(_rng::Random.AbstractRNG, particles::SMCParticles{<:SMC2Kernel}, tune::SMCTune, data::D, temperature::F) where {D, F<:AbstractFloat}
     ## Propagate series forward with recent particle
-    #Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(particles.model)
+#    Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(particles.model)
     Base.Threads.@threads for iter in eachindex(particles.model)
         #_, diagnostics = propagate!(
         propagate!(

@@ -62,7 +62,8 @@ function SMCParticles(
         _rng, algorithmᵛ[1], modelᵗᵉᵐᵖ, data, Nchains
     )
     ## Loop through all models
-    #Polyester.@batch per=thread minbatch=tune.batchsize
+    #!NOTE: Polyester may change type to StridedArray, which is not supported in SMC kernel INITIATION
+#    Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(algorithmᵛ)
     Base.Threads.@threads for iter in eachindex(algorithmᵛ)
         ## Tune kernel
         #Update kernel for first iteration

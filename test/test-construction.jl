@@ -50,7 +50,7 @@ end
 
 
 @testset "Kernel construction and propagation, ASMC with PMCMC" begin
-    ## MCMC
+    ## MCMC\
     pfdefault_pmcmc = ParticleFilterDefault(referencing = Ancestral(),)
     mcmcdefault = MCMCDefault(; stepsize = ConfigStepsize(;stepsizeadaption = UpdateFalse()))
     pmcmc = ParticleGibbs(
