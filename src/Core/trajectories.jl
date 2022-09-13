@@ -182,6 +182,7 @@ function weight!(
     @inbounds for iter in eachindex(particles.weights.ℓweights)
         objective = Objective(particles.model[iter], data, tune.tagged, temperature)
         #!NOTE: particles.buffer.cumweights is cumulative weight at previous iteration, accounting for jittering step.
+        #!NOTE: ℓweights will be 0.0 at first iteration if not data or temperature tempering is performed
         particles.buffer.cumweights[iter], particles.weights.ℓweights[iter] = SMCweight(
             _rng,
             objective, particles.kernel[iter],

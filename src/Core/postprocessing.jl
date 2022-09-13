@@ -119,8 +119,9 @@ function results(
             " steps in second half.",
         )
     end
-    ##Rejuvenation Correlation
-    rejuvenations = [diagnosticsᵛ[iter].resampled for iter in eachindex(diagnosticsᵛ)]
+    # Get indices where jittering has been applied and all correlation numbers are non-NaN for computing output statistics.
+    #    rejuvenations = [diagnosticsᵛ[iter].resampled for iter in eachindex(diagnosticsᵛ)]
+    rejuvenations = [diagnosticsᵛ[iter].resampled && all(!isnan, diagnosticsᵛ[iter].ρ) for iter in eachindex(diagnosticsᵛ)]
     if sum(rejuvenations) > 0
         println(
             "Quantiles for average rejuvenation correlation of parameter: ",

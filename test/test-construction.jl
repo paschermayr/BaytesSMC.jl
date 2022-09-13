@@ -50,7 +50,7 @@ end
 
 
 @testset "Kernel construction and propagation, ASMC with PMCMC" begin
-    ## MCMC\
+    ## MCMC
     pfdefault_pmcmc = ParticleFilterDefault(referencing = Ancestral(),)
     mcmcdefault = MCMCDefault(; stepsize = ConfigStepsize(;stepsizeadaption = UpdateFalse()))
     pmcmc = ParticleGibbs(
@@ -84,6 +84,7 @@ end
             UpdateTrue()
         )
     end
+    #sum( diags[iter].resampled for iter in eachindex(diags) )
     results(diags, smc, 2, [.1, .2, .5, .8, .9])
 end
 
