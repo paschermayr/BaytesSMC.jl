@@ -26,7 +26,7 @@ struct SMCDefault{
     jitteradaption::B
     "Boolean if diagnostics in jittersteps should be recorded in SMCDiagnostics."
     jitterdiagnostics::C
-    "Stopping threshold against mean correlation of jittered model parameter."
+    "Stopping threshold against jitterfun(correlation) of jittered model parameter."
     jitterthreshold::Float64
     "Minimum number of jittering steps."
     jittermin::Int64

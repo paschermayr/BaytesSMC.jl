@@ -53,7 +53,9 @@ function compute_ρ!(
         #Assign a small value at start of index for temporary starting point pair[1]
         #!NOTE: If pairs[i] are constant (i.e., all resampled initial parameter come from same index), ρ = NaN
         #!NOTE: Will not change parameter as scalar immutable and only buffer changed
-        pairs[1][begin] += ϵ
+
+        #!NOTE: Update - BaytesCore.jitter! works not with NaN/Inf, no more need to add small ϵ for correlation computation
+#        pairs[1][begin] += ϵ
         ρ[iter] = Statistics.cor(pairs[1], pairs[2])
     end
     return ρ
