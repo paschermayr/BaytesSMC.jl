@@ -161,29 +161,21 @@ function propose!(
 #    temperature::F = model.info.reconstruct.default.output(1.0),
 #    update::U=BaytesCore.UpdateTrue()
 ) where {D, T<:ProposalTune}
-    ## Update Proposal tuning information that is shared among algorithms
-#    @unpack temperature, update, datatune = proposaltune
-
-#################
-    ## Resample θ with proposal tune from previous iteration
-#    proposaltuneₜ₋₁ = BaytesCore.ProposalTune(smc.tune.temperatureₜ₋₁.current, smc.tune.capture, proposaltune.datatune)
-#    adjust_previous(data, proposaltune.datatune)
-#    ESS, resampled = resample!(_rng, smc.particles, smc.tune, adjust_previous(data, proposaltune.datatune), proposaltuneₜ₋₁)
-
-    #!NOTE: Placeholder:
-    BaytesCore.update!(smc.tune.temperatureₜ₋₁, proposaltune.temperature)
-#    temperatureₜ = proposaltune.temperature
-    #!NOTE: smc.tune.capture might differ from proposaltune.update -> in SMC jitterng, first step always with UpdateTrue, further steps may use UpdateFalse if permitted. Hence, separate proposaltuneₜ will be used.
-    proposaltuneₜ = BaytesCore.ProposalTune(proposaltune.temperature, smc.tune.capture, proposaltune.datatune)
-
-
-#################
     ## Update kernel parameter values with non-tagged parameter from other sampler
-    #!NOTE: proposaltune.update used, not proposaltuneₜ/smc.tune.captured
+        #!NOTE: proposaltune.update used, not proposaltuneₜ/smc.tune.captured
     update!(smc.particles, model, smc.tune.tagged, proposaltune.update)
     ## Set back tune.jitter and update buffer to store correct information for diagnostics
     update!(smc.tune)
     update!(smc.particles.buffer)
+    ## Resample θ with proposal tune and data from previous iteration
+    proposaltuneₜ₋₁ = BaytesCore.ProposalTune(smc.tune.temperatureₜ₋₁.current, smc.tune.capture, proposaltune.datatune)
+    #!NOTE: conversion will not allocate in Baytes.jl as data will be a view already, but this ensures that this works if separately called.
+    dataₜ₋₁ = convert(typeof(data), BaytesCore.adjust_previous(proposaltune.datatune, data))
+    ESS, resampled = resample!(_rng, smc.particles, smc.tune, dataₜ₋₁, proposaltuneₜ₋₁)
+    ## Update temperature and proposaltune to current iteration
+    BaytesCore.update!(smc.tune.temperatureₜ₋₁, proposaltune.temperature)
+        #!NOTE: smc.tune.capture might differ from proposaltune.update -> in SMC jitterng, first step always with UpdateTrue, further steps may use UpdateFalse if permitted. Hence, separate proposaltuneₜ will be used.
+    proposaltuneₜ = BaytesCore.ProposalTune(proposaltune.temperature, smc.tune.capture, proposaltune.datatune)
     ## If latent θ trajectory increasing - propagate forward
     propagate!(_rng, smc.particles, smc.tune, data, proposaltuneₜ)
     ## Predict new data given current particles
@@ -191,11 +183,7 @@ function propose!(
     ## Adjust weights with log likelihood INCREMENT at time t
     weight!(_rng, smc.particles, smc.tune, data, proposaltuneₜ)
     ## Compute weighted average of incremental log weights - can be used for marginal or log predictive likelihood computation.
-    #!NOTE: Computed before resampling, where normalized weights are adjusted for next iteration
     ℓincrement = BaytesCore.weightedincrement(smc.particles.weights)
-    ## Resample and jitter particles if criterion fulfilled
-    #!NOTE: Cannot use resample before propagate! (as in pf) as previous temperature otherwise unknown and data would need dimension of previous run
-    ESS, resampled = resample!(_rng, smc.particles, smc.tune, data, proposaltuneₜ)
     ## Choose proposal model parameter to update model.val
     path = BaytesFilters.draw!(_rng, smc.particles.weights)
     ModelWrappers.fill!(model,

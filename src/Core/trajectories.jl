@@ -53,7 +53,7 @@ function resample!(
         BaytesCore.shuffle!(particles.buffer.parameter, particles.model, particles.kernel, particles.buffer.cumweights) #particles.kernel,
         ## Rejuvenate Particles
         jitter!(_rng, particles, tune, data, proposaltune)
-        ## Reweight ℓweights used for tempering so have correct index and temperature for next iteration
+        ## Reweight cumulative ℓweights (stored in buffer) used for tempering so have correct index and temperature for next iteration
         reweight!(_rng, particles, tune, data, proposaltune)
     end
     return ESS, resampled
