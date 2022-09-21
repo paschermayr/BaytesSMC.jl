@@ -27,7 +27,8 @@ for iter in eachindex(objectives)
         smc = SMC(_rng, mcmc, _obj, SMCDefault(;generated = generated[iter]))
         vals, diagnostics = propose!(_rng, smc, _obj.model, _obj.data)
         @test eltype(diagnostics.ρ) == _flattentype
-        vals, diagnostics = propose!(_rng, smc, _obj.model, _obj.data, _obj.temperature, UpdateFalse())
+        proposaltune_updatefalse = BaytesCore.ProposalTune(_obj.temperature, BaytesCore.UpdateFalse(), BaytesCore.DataTune(BaytesCore.Batch(), nothing, nothing) )
+        vals, diagnostics = propose!(_rng, smc, _obj.model, _obj.data, proposaltune_updatefalse)
         @test eltype(diagnostics.ρ) == _flattentype
         ## Postprocessing
         generate_showvalues(diagnostics)()
@@ -60,13 +61,13 @@ end
     ## Propose new parameter
     @test length(myobjective_mcmc.model.val.latent) == length(myobjective_mcmc.data)
     smc = SMC(_rng, pmcmc, myobjective_mcmc)
+    proposaltune_updatetrue = BaytesCore.ProposalTune(myobjective_mcmc.temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(BaytesCore.Batch(), nothing, nothing) )
     vals, diagnostics = propose!(
         _rng,
         smc,
         myobjective_mcmc.model,
         myobjective_mcmc.data,
-        myobjective_mcmc.temperature,
-        UpdateTrue()
+        proposaltune_updatetrue
     )
 
     ## Postprocessing
@@ -80,8 +81,7 @@ end
             smc,
             myobjective_mcmc.model,
             myobjective_mcmc.data,
-            myobjective_mcmc.temperature,
-            UpdateTrue()
+            proposaltune_updatetrue
         )
     end
     #sum( diags[iter].resampled for iter in eachindex(diags) )
@@ -107,7 +107,8 @@ for iter in eachindex(objectives)
         @test BaytesCore.get_sym(mcmc) == BaytesSMC.get_sym(smc_c)
         ## Propose new parameter
         smc = SMC(_rng, mcmc, _obj2)
-        vals, diagnostics = propose!(_rng, smc, _obj2.model, _obj2.data)
+        proposaltune_updatetrue = BaytesCore.ProposalTune(_obj2.temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(_obj2.data, BaytesCore.Expanding( length( _obj2.data ) ) ) )
+        vals, diagnostics = propose!(_rng, smc, _obj2.model, _obj2.data, proposaltune_updatetrue)
         @test eltype(diagnostics.ρ) == _flattentype
         ## Postprocessing
         smc = SMC(_rng, mcmc, _obj2)
@@ -118,7 +119,8 @@ for iter in eachindex(objectives)
         diags = Vector{diagtype}(undef, datadiff)
         for iter in eachindex(diags)
             data_temp = _obj.data[1:(length(_obj2.data) + iter)]
-            _, diags[iter] = propose!(_rng, smc, _obj.model, data_temp)
+            proposaltune_updatetrue = BaytesCore.ProposalTune(_obj.temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(data_temp, BaytesCore.Expanding( length(data_temp) ) ) )
+            _, diags[iter] = propose!(_rng, smc, _obj.model, data_temp, proposaltune_updatetrue)
         end
         results(diags, smc, 2, [.1, .2, .5, .8, .9])
     end
@@ -145,13 +147,14 @@ end
     _obj = Objective(deepcopy(mymodel), data_init)
     @test length(_obj.model.val.latent) == length(_obj.data)  == N_SMC2
     smc = SMC(_rng, smc2, _obj)
+
+    proposaltune_updatetrue = BaytesCore.ProposalTune(_obj.temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(data[1:N_SMC2+1], BaytesCore.Expanding( length(data[1:N_SMC2+1]) ) ) )
     vals, diagnostics = propose!(
         _rng,
         smc,
         _obj.model,
         data[1:N_SMC2+1],
-        1.0,
-        UpdateTrue()
+        proposaltune_updatetrue
     )
     @test length(mymodel.val.latent) == N_SMC2
     @test length(_obj.model.val.latent) == N_SMC2 + 1
@@ -164,21 +167,21 @@ end
     diags = Vector{diagtype}(undef, 100)
     for iter in eachindex(diags)
         data_temp = data[1:N_SMC2+iter]
+        proposaltune_updatetrue = BaytesCore.ProposalTune(_obj.temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(data_temp, BaytesCore.Expanding( length(data_temp) ) ) )
         _, diags[iter] = propose!(
             _rng,
             smc,
             _obj.model,
             data_temp,
-            1.0,
-            UpdateTrue()
+            proposaltune_updatetrue
         )
     end
     results(diags, smc, 2, [.1, .2, .5, .8, .9])
 
-
     ## Check if Jitterdiagnostics in kernel
     _obj = Objective(deepcopy(mymodel), data_init)
     smc = SMC(_rng, smc2, _obj, SMCDefault(;jitterdiagnostics = UpdateTrue(),))
-    vals, diagnostics = propose!(_rng, smc, _obj.model, data[1:length(data_init)+1])
+    proposaltune_updatetrue = BaytesCore.ProposalTune(_obj.temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(data[1:length(data_init)+1], BaytesCore.Expanding( length(data[1:length(data_init)+1]) ) ) )
+    vals, diagnostics = propose!(_rng, smc, _obj.model, data[1:length(data_init)+1], proposaltune_updatetrue)
     @test !isa(diagnostics.jitterdiagnostics, Vector{Nothing})
 end

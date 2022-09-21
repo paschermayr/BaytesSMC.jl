@@ -64,20 +64,24 @@ function SMCParticles(
     ## Loop through all models
     #!NOTE: Polyester may change type to StridedArray, which is not supported in SMC kernel INITIATION
 #    Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(algorithmᵛ)
+    #!NOTE: Train with fully available data
+    proposaltune = BaytesCore.ProposalTune(temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(BaytesCore.Batch()))
+    proposaltune_captured = BaytesCore.ProposalTune(temperature, tune.capture, BaytesCore.DataTune(BaytesCore.Batch()))
     Base.Threads.@threads for iter in eachindex(algorithmᵛ)
         ## Tune kernel
-        #Update kernel for first iteration
-        propose!(_rng, algorithmᵛ[iter], modelᵛ[iter], data, temperature, BaytesCore.UpdateTrue())
+        #Update kernel for first iteration - always with UpdateTrue for first iteration
+        propose!(_rng, algorithmᵛ[iter], modelᵛ[iter], data, proposaltune)
         for _ in 2:Ntuning
-            propose!(_rng, algorithmᵛ[iter], modelᵛ[iter], data, temperature, tune.capture)
+            propose!(_rng, algorithmᵛ[iter], modelᵛ[iter], data, proposaltune_captured)
         end
         ## Assign weight
         #!NOTE: Objective itself only stores logposterior function, no problem to call it as long as θ comes from modelᵛ.
         _objective = Objective(modelᵛ[iter], objective.data, tune.tagged, objective.temperature)
         buffer.cumweights[iter], weights.buffer[iter] = SMCweight(
             _rng,
-            _objective,
             algorithmᵛ[iter],
+            _objective,
+            proposaltune_captured,
             _objective.temperature * _objective(objective.model.val)
         )
     end

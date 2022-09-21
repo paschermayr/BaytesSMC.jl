@@ -14,7 +14,8 @@ struct SMCTune{
     C<:BaytesCore.UpdateBool,
     R<:BaytesCore.ResamplingMethod,
     U<:BaytesCore.UpdateBool,
-    S<:BaytesCore.UpdateBool
+    S<:BaytesCore.UpdateBool,
+    V<:BaytesCore.ValueHolder
     }
     "Tagged Model parameter."
     tagged::T
@@ -38,6 +39,8 @@ struct SMCTune{
     batchsize::Int64
     "Boolean if generated quantities should be generated while sampling"
     generated::S
+    "Holds temperature of previous iteration so data tempering can be beformed for resample step."
+    temperatureₜ₋₁::V
     function SMCTune(
         tagged::T,
         Nchains::Int64,
@@ -52,7 +55,8 @@ struct SMCTune{
         jitterthreshold::Float64,
         Njitter_min::Integer,
         Njitter_max::Integer,
-        generated::S
+        generated::S,
+        temperature::A
     ) where {
         T<:Tagged,
         F<:Function,
@@ -60,13 +64,15 @@ struct SMCTune{
         C<:BaytesCore.UpdateBool,
         D<:BaytesCore.ResamplingMethod,
         U<:BaytesCore.UpdateBool,
-        S<:BaytesCore.UpdateBool
+        S<:BaytesCore.UpdateBool,
+        A<:Real
     }
         ## Check input for correctness
         ArgCheck.@argcheck 0 < Ntuning "Number of tuning iterations has to be positive"
         ArgCheck.@argcheck 0.0 <= resamplingthreshold "threshold has to be positive"
         ArgCheck.@argcheck 0.0 <= jitterthreshold "jitterthreshold has to be positive"
         ArgCheck.@argcheck 0 < Njitter_min <= Njitter_max
+        ArgCheck.@argcheck 0.0 <= temperature <= 1.0
         ## Assign tuning structs
         jitter_maybe = Updater(false)
         #!NOTE: Start with Ndata, so first propose!() step has correct iteration after training.
@@ -78,9 +84,11 @@ struct SMCTune{
         resample = BaytesCore.ResampleTune(resampling, BaytesCore.Updater(false))
         ## Compute batchsize for parallel processing in resampling step
         batchsize = compute_batchsize(Nchains)
+        ## Save current temperature
+        temperatureₜ₋₁ = BaytesCore.ValueHolder(temperature)
         ## Return SMC tune
-        return new{T,F,B,C,D,U,S}(
-            tagged, iter, particletune, resample, jitter, jitterfun, jitterdiagnostics, capture, Ntuning, batchsize, generated
+        return new{T,F,B,C,D,U,S, typeof(temperatureₜ₋₁)}(
+            tagged, iter, particletune, resample, jitter, jitterfun, jitterdiagnostics, capture, Ntuning, batchsize, generated, temperatureₜ₋₁
         )
     end
 end

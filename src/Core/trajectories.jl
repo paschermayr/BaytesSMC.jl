@@ -27,8 +27,8 @@ function resample!(
     particles::SMCParticles,
     tune::SMCTune,
     data::D,
-    temperature::F
-) where {D, F<:AbstractFloat}
+    proposaltune::P
+) where {D, P<:ProposalTune}
     ## Set resample back to false from previous iteration
     init!(tune.resample, false)
     ## Compute ESS
@@ -52,9 +52,9 @@ function resample!(
         #!NOTE: Also set cumulative particle weights smc.buffer.weights back to correct position
         BaytesCore.shuffle!(particles.buffer.parameter, particles.model, particles.kernel, particles.buffer.cumweights) #particles.kernel,
         ## Rejuvenate Particles
-        jitter!(_rng, particles, tune, data, temperature)
+        jitter!(_rng, particles, tune, data, proposaltune)
         ## Reweight ℓweights used for tempering so have correct index and temperature for next iteration
-        reweight!(_rng, particles, tune, data, temperature)
+        reweight!(_rng, particles, tune, data, proposaltune)
     end
     return ESS, resampled
 end
@@ -71,9 +71,10 @@ Jitter θ particles with given kernels. This is performed in 2 stages:
 ```
 
 """
-function jitter!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTune, data::D, temperature::F) where {D, F<:AbstractFloat}
+function jitter!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTune, data::D, proposaltune::P) where {D, P<:ProposalTune}
     ## Make first jitter step, update for new data and shuffled parameter
 #    Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(particles.kernel)
+    proposaltune_initial = ProposalTune(proposaltune.temperature, BaytesCore.UpdateTrue(), proposaltune.datatune)
     Base.Threads.@threads for iter in eachindex(particles.kernel)
         ## Propose new parameter
         #!NOTE: UpdateTrue() ensures that MCMC Kernel's LogDensityResult is updated with new particles.model[iter] parameter
@@ -82,8 +83,7 @@ function jitter!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTun
             jitterkernel(particles, iter),
             particles.model[iter],
             data,
-            temperature,
-            BaytesCore.UpdateTrue()
+            proposaltune_initial
         )
         #!NOTE: has to be in loop for scoping rules
         particles.buffer.predictions[iter] = BaytesCore.get_prediction(
@@ -107,8 +107,7 @@ function jitter!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTun
                 jitterkernel(particles, iter),
                 particles.model[iter],
                 data,
-                temperature,
-                tune.capture
+                proposaltune
             )
             #!NOTE: has to be in loop for scoping rules
             particles.buffer.predictions[iter] = BaytesCore.get_prediction(
@@ -133,7 +132,7 @@ Propagate data forward over time. If (latent) data has to be extended, need to o
 ```
 
 """
-function propagate!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTune, data::D, temperature::F) where {D, F<:AbstractFloat}
+function propagate!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTune, data::D, proposaltune::P) where {D, P<:ProposalTune}
     return nothing
 end
 
@@ -147,14 +146,14 @@ Predict new data for each smc particle.
 ```
 
 """
-function predict!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTune, data::D, temperature::F) where {D, F<:AbstractFloat}
+function predict!(_rng::Random.AbstractRNG, particles::SMCParticles, tune::SMCTune, data::D, proposaltune::P) where {D, P<:ProposalTune}
     ## Propagate series forward with recent particle
     for iter in eachindex(particles.model)
         ## Predict new data point
         particles.buffer.predictions[iter] = predict(
             _rng,
             particles.kernel[iter],
-            Objective(particles.model[iter], data, tune.tagged, temperature)
+            Objective(particles.model[iter], data, tune.tagged, proposaltune.temperature)
         )
     end
     #!NOTE: Here, particles.buffer.jitterdiagnostics will not be updated, and for SMCDiagnostics, last available jitterdiagnostics are provided.
@@ -176,16 +175,18 @@ function weight!(
     particles::SMCParticles,
     tune::SMCTune,
     data::D,
-    temperature::F
-) where {D, F<:AbstractFloat}
+    proposaltune::P
+) where {D, P<:ProposalTune}
     ## Compute incremental weight for resampling step, and cumulative weight for i) next iteration and ii) temperature adjustment
     @inbounds for iter in eachindex(particles.weights.ℓweights)
-        objective = Objective(particles.model[iter], data, tune.tagged, temperature)
+        objective = Objective(particles.model[iter], data, tune.tagged, proposaltune.temperature)
         #!NOTE: particles.buffer.cumweights is cumulative weight at previous iteration, accounting for jittering step.
         #!NOTE: ℓweights will be 0.0 at first iteration if not data or temperature tempering is performed
         particles.buffer.cumweights[iter], particles.weights.ℓweights[iter] = SMCweight(
             _rng,
-            objective, particles.kernel[iter],
+            particles.kernel[iter],
+            objective,
+            proposaltune,
             particles.buffer.cumweights[iter]
         )
     end
@@ -208,7 +209,7 @@ which speeds up computation. `cumweightsₜ` is not needed in this case.
 ```
 
 """
-function SMCweight(_rng::Random.AbstractRNG, objective::Objective, algorithm, cumweightsₜ₋₁)
+function SMCweight(_rng::Random.AbstractRNG, algorithm, objective::Objective, proposaltune::P, cumweightsₜ₋₁) where {P<:ProposalTune}
     cumweightsₜ = objective.temperature * objective(objective.model.val)
     #!NOTE: cumweightsₜ₋₁ already has correct temperature at t-1
     return cumweightsₜ, cumweightsₜ - cumweightsₜ₋₁
@@ -230,16 +231,17 @@ function reweight!(
     particles::SMCParticles,
     tune::SMCTune,
     data::D,
-    temperature::F
-) where {D, F<:AbstractFloat}
+    proposaltune::P
+) where {D, P<:ProposalTune}
     ## Compute incremental weight for resampling step, and cumulative weight for i) next iteration and ii) temperature adjustment
     @inbounds for iter in eachindex(particles.weights.ℓweights)
-        objective = Objective(particles.model[iter], data, tune.tagged, temperature)
+        objective = Objective(particles.model[iter], data, tune.tagged, proposaltune.temperature)
         #!NOTE: particles.buffer.cumweights is cumulative weight at previous iteration, accounting for jittering step.
         particles.buffer.cumweights[iter], _ = SMCreweight(
             _rng,
-            objective,
             particles.kernel[iter],
+            objective,
+            proposaltune,
             particles.buffer.cumweights[iter]
         )
     end
@@ -256,8 +258,8 @@ Computes particle weights after jiterring step. Defaults to `SMCweight` function
 ```
 
 """
-function SMCreweight(_rng::Random.AbstractRNG, objective::Objective, algorithm, cumweightsₜ₋₁)
-    return SMCweight(_rng, objective, algorithm, cumweightsₜ₋₁)
+function SMCreweight(_rng::Random.AbstractRNG, algorithm, objective::Objective, proposaltune::P, cumweightsₜ₋₁) where {D, P<:ProposalTune}
+    return SMCweight(_rng, algorithm, objective, proposaltune, cumweightsₜ₋₁)
 end
 
 ############################################################################################

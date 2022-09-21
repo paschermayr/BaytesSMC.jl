@@ -133,7 +133,8 @@ function SMC(
         jitterthreshold,
         jittermin,
         jittermax,
-        generated
+        generated,
+        objective.temperature
     )
     ## Initialize SMCParticles
     particles = SMCParticles(_rng, Jitterkernel, objective, info, tune)
@@ -156,26 +157,45 @@ function propose!(
     smc::SMC,
     model::ModelWrapper,
     data::D,
-    temperature::F = model.info.reconstruct.default.output(1.0),
-    update::U=BaytesCore.UpdateTrue()
-) where {D,F<:AbstractFloat,U<:BaytesCore.UpdateBool}
+    proposaltune::T = BaytesCore.ProposalTune(model.info.reconstruct.default.output(1.0))
+#    temperature::F = model.info.reconstruct.default.output(1.0),
+#    update::U=BaytesCore.UpdateTrue()
+) where {D, T<:ProposalTune}
+    ## Update Proposal tuning information that is shared among algorithms
+#    @unpack temperature, update, datatune = proposaltune
+
+#################
+    ## Resample θ with proposal tune from previous iteration
+#    proposaltuneₜ₋₁ = BaytesCore.ProposalTune(smc.tune.temperatureₜ₋₁.current, smc.tune.capture, proposaltune.datatune)
+#    adjust_previous(data, proposaltune.datatune)
+#    ESS, resampled = resample!(_rng, smc.particles, smc.tune, adjust_previous(data, proposaltune.datatune), proposaltuneₜ₋₁)
+
+    #!NOTE: Placeholder:
+    BaytesCore.update!(smc.tune.temperatureₜ₋₁, proposaltune.temperature)
+#    temperatureₜ = proposaltune.temperature
+    #!NOTE: smc.tune.capture might differ from proposaltune.update -> in SMC jitterng, first step always with UpdateTrue, further steps may use UpdateFalse if permitted. Hence, separate proposaltuneₜ will be used.
+    proposaltuneₜ = BaytesCore.ProposalTune(proposaltune.temperature, smc.tune.capture, proposaltune.datatune)
+
+
+#################
     ## Update kernel parameter values with non-tagged parameter from other sampler
-    update!(smc.particles, model, smc.tune.tagged, update)
+    #!NOTE: proposaltune.update used, not proposaltuneₜ/smc.tune.captured
+    update!(smc.particles, model, smc.tune.tagged, proposaltune.update)
     ## Set back tune.jitter and update buffer to store correct information for diagnostics
     update!(smc.tune)
     update!(smc.particles.buffer)
     ## If latent θ trajectory increasing - propagate forward
-    propagate!(_rng, smc.particles, smc.tune, data, temperature)
+    propagate!(_rng, smc.particles, smc.tune, data, proposaltuneₜ)
     ## Predict new data given current particles
-    predict!(_rng, smc.particles, smc.tune, data, temperature)
+    predict!(_rng, smc.particles, smc.tune, data, proposaltuneₜ)
     ## Adjust weights with log likelihood INCREMENT at time t
-    weight!(_rng, smc.particles, smc.tune, data, temperature)
+    weight!(_rng, smc.particles, smc.tune, data, proposaltuneₜ)
     ## Compute weighted average of incremental log weights - can be used for marginal or log predictive likelihood computation.
     #!NOTE: Computed before resampling, where normalized weights are adjusted for next iteration
     ℓincrement = BaytesCore.weightedincrement(smc.particles.weights)
     ## Resample and jitter particles if criterion fulfilled
-    #!NOTE: Cannot use resample before propagate! (as in pf) as previous temperature otherwise unknown
-    ESS, resampled = resample!(_rng, smc.particles, smc.tune, data, temperature)
+    #!NOTE: Cannot use resample before propagate! (as in pf) as previous temperature otherwise unknown and data would need dimension of previous run
+    ESS, resampled = resample!(_rng, smc.particles, smc.tune, data, proposaltuneₜ)
     ## Choose proposal model parameter to update model.val
     path = BaytesFilters.draw!(_rng, smc.particles.weights)
     ModelWrappers.fill!(model,
@@ -186,12 +206,12 @@ function propose!(
     SMCDiagnostics(
         smc.particles,
         ℓincrement,
-        temperature,
+        proposaltuneₜ.temperature,
         ESS,
         resampled,
         smc.tune.jitter.Nsteps.current,
         smc.tune.iter.current,
-        ModelWrappers.generate(_rng, Objective(model, data, smc.tune.tagged, temperature), smc.tune.generated),
+        ModelWrappers.generate(_rng, Objective(model, data, smc.tune.tagged, proposaltuneₜ.temperature), smc.tune.generated),
         smc.tune.jitterdiagnostics
     )
 end

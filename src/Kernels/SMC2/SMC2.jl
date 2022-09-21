@@ -90,21 +90,22 @@ function jitterkernel(particles::SMCParticles{<:SMC2Kernel}, iter::Int64)
     return particles.kernel[iter].pmcmc
 end
 
-function SMCweight(_rng::Random.AbstractRNG, objective::Objective, algorithm::SMC2Kernel, cumweightsₜ₋₁)
+function SMCweight(_rng::Random.AbstractRNG, algorithm::SMC2Kernel, objective::Objective, proposaltune::P, cumweightsₜ₋₁) where {P<:ProposalTune}
     #!NOTE: Use cumulative weight from propagated pf, taking into account new data
     cumweightsₜ = objective.temperature * algorithm.pf.particles.ℓobjective.cumulative #get_ℓweight(algorithm.pf)
     #!NOTE: cumweightsₜ₋₁ already has correct temperature at t-1
     return cumweightsₜ, cumweightsₜ - cumweightsₜ₋₁
 end
-function SMCreweight(_rng::Random.AbstractRNG, objective::Objective, algorithm::SMC2Kernel, cumweightsₜ₋₁)
+function SMCreweight(_rng::Random.AbstractRNG, algorithm::SMC2Kernel, objective::Objective, proposaltune::P, cumweightsₜ₋₁) where {P<:ProposalTune}
     #!NOTE: Run Particle Filter wrt to jittered model parameter, and compute new weight
+    #!NOTE: Update PF particles to PMCMC.PF particles in this step, so UpdateTrue()
+    proposaltune_updatetrue = BaytesCore.ProposalTune(objective.temperature, BaytesCore.UpdateTrue(), proposaltune.datatune)
     propose!(
         _rng,
         algorithm.pf,
         objective.model,
         objective.data,
-        objective.temperature,
-        BaytesCore.UpdateTrue()
+        proposaltune_updatetrue
     )
     cumweightsₜ = objective.temperature * algorithm.pf.particles.ℓobjective.cumulative #get_ℓweight(algorithm.pf)
     #!NOTE: cumweightsₜ₋₁ already has correct temperature at t-1
@@ -156,20 +157,24 @@ function SMCParticles(
     ## Loop through all models
     #!NOTE: Polyester may change type to StridedArray, which is not supported in SMC kernel INITIATION
 #    Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(algorithmᵛ)
+    #!NOTE: Train with fully available data
+    proposaltune = BaytesCore.ProposalTune(temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(BaytesCore.Batch()))
+    proposaltune_captured = BaytesCore.ProposalTune(temperature, tune.capture, BaytesCore.DataTune(BaytesCore.Batch()))
     Base.Threads.@threads for iter in eachindex(algorithmᵛ)
-        ## Tune PMCMC algorithm
-        propose!(_rng, algorithmᵛ[iter].pmcmc, modelᵛ[iter], data, temperature, BaytesCore.UpdateTrue())
+        ## Tune PMCMC algorithm - always with UpdateTrue for first iteration
+        propose!(_rng, algorithmᵛ[iter].pmcmc, modelᵛ[iter], data, proposaltune)
         for _ in 2:Ntuning
-            propose!(_rng, algorithmᵛ[iter].pmcmc, modelᵛ[iter], data, temperature, tune.capture)
+            propose!(_rng, algorithmᵛ[iter].pmcmc, modelᵛ[iter], data, proposaltune_captured)
         end
         ## Assign a Particle Filter for tuned theta
-        propose!(_rng, algorithmᵛ[iter].pf, modelᵛ[iter], data, temperature, BaytesCore.UpdateTrue())
+        propose!(_rng, algorithmᵛ[iter].pf, modelᵛ[iter], data, proposaltune)
         ## Calculate initial weights
         _objective = Objective(modelᵛ[iter], objective.data, tune.tagged, objective.temperature)
         buffer.cumweights[iter], weights.buffer[iter] = SMCweight(
             _rng,
-            _objective,
             algorithmᵛ[iter],
+            _objective,
+            proposaltune_captured,
             _objective(_objective.model.val)
         )
     end
@@ -189,9 +194,12 @@ Propagate data forward over time.
 ```
 
 """
-function propagate!(_rng::Random.AbstractRNG, particles::SMCParticles{<:SMC2Kernel}, tune::SMCTune, data::D, temperature::F) where {D, F<:AbstractFloat}
+function propagate!(_rng::Random.AbstractRNG, particles::SMCParticles{<:SMC2Kernel}, tune::SMCTune, data::D, proposaltune::P) where {D, P<:ProposalTune}
+    @unpack temperature = proposaltune
     ## Propagate series forward with recent particle
 #    Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(particles.model)
+    #!NOTE: Always updated in case resampling has been applied or dynamics depend on data dimension
+    proposaltune_updated = BaytesCore.ProposalTune(proposaltune.temperature, BaytesCore.UpdateTrue(), proposaltune.datatune)
     Base.Threads.@threads for iter in eachindex(particles.model)
         #_, diagnostics = propagate!(
         propagate!(
@@ -199,7 +207,7 @@ function propagate!(_rng::Random.AbstractRNG, particles::SMCParticles{<:SMC2Kern
             particles.kernel[iter].pf,
             particles.model[iter],
             data,
-            temperature
+            proposaltune_updated
         )
         #particles.buffer.predictions[iter] = diagnostics.base.prediction
     end

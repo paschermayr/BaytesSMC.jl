@@ -17,7 +17,6 @@ import BaytesCore:
     result!,
     get_result,
     get_sym,
-
     generate_showvalues,
     ResamplingMethod,
     shuffle!,
@@ -48,7 +47,9 @@ using BaytesCore:
     ParameterWeights,
     ResampleTune,
     ModelParameterBuffer,
-    SampleDefault
+    SampleDefault,
+    ProposalTune,
+    ValueHolder
 
 using ModelWrappers:
     ModelWrappers,
