@@ -169,7 +169,7 @@ function propose!(
     update!(smc.particles.buffer)
     ## Resample θ with proposal tune and data from previous iteration
     proposaltuneₜ₋₁ = BaytesCore.ProposalTune(smc.tune.temperatureₜ₋₁.current, smc.tune.capture, proposaltune.datatune)
-    #!NOTE: conversion will not allocate in Baytes.jl as data will be a view already, but this ensures that this works if separately called.
+        #!NOTE: conversion will not allocate in Baytes.jl as data will be a view already, but this ensures that this works if separately called.
     dataₜ₋₁ = convert(typeof(data), BaytesCore.adjust_previous(proposaltune.datatune, data))
     ESS, resampled = resample!(_rng, smc.particles, smc.tune, dataₜ₋₁, proposaltuneₜ₋₁)
     ## Update temperature and proposaltune to current iteration

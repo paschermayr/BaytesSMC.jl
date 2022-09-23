@@ -192,8 +192,9 @@ _rng
 smc = SMC(_rng, smc2, _obj)
 proposaltune = BaytesCore.ProposalTune(_obj.temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(data[1:N_SMC2+1], BaytesCore.Expanding( length(data[1:N_SMC2+1]) ) ) )
 model = deepcopy(_obj.model)
+data = [rand(_rng, Normal(μ[iter], σ[iter])) for iter in latent]
 data = data[1:N_SMC2+1]
-
+smc.tune.temperatureₜ₋₁.current = 0.1
 
 smc.particles.model
 ## Update kernel parameter values with non-tagged parameter from other sampler
@@ -220,7 +221,7 @@ dataₜ₋₁ = convert(typeof(data), BaytesCore.adjust_previous(proposaltune.da
 
 ESS, resampled = resample!(_rng, smc.particles, smc.tune, dataₜ₋₁, proposaltuneₜ₋₁)
 
-# #=
+#=
 _rng
 particles = smc.particles
 tune = smc.tune
@@ -265,13 +266,15 @@ end
 =#
 
 ## Update temperature and proposaltune to current iteration
+particles = smc.particles
+tune = smc.tune
 tune.temperatureₜ₋₁
 BaytesCore.update!(tune.temperatureₜ₋₁, proposaltune.temperature)
     #!NOTE: smc.tune.capture might differ from proposaltune.update -> in SMC jitterng, first step always with UpdateTrue, further steps may use UpdateFalse if permitted. Hence, separate proposaltuneₜ will be used.
 proposaltuneₜ = BaytesCore.ProposalTune(proposaltune.temperature, tune.capture, proposaltune.datatune)
 tune.temperatureₜ₋₁.current
 proposaltune.temperature
-
+proposaltuneₜ.temperature
 
 data = [rand(_rng, Normal(μ[iter], σ[iter])) for iter in latent]
 data = data[1:(length(dataₜ₋₁)+1)]

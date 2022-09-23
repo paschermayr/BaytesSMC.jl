@@ -77,7 +77,7 @@ function SMCParticles(
         ## Assign weight
         #!NOTE: Objective itself only stores logposterior function, no problem to call it as long as θ comes from modelᵛ.
         _objective = Objective(modelᵛ[iter], objective.data, tune.tagged, objective.temperature)
-        buffer.cumweights[iter], weights.buffer[iter] = SMCweight(
+        buffer.cumweights[iter], _ = SMCweight( #weights.buffer[iter] = SMCweight(
             _rng,
             algorithmᵛ[iter],
             _objective,
@@ -86,7 +86,8 @@ function SMCParticles(
         )
     end
     ## Normalize weights
-    weights(weights.buffer)
+    #!NOTE: Skip this step and leave initial particles equal weighted - so no resampling at first iteration!
+#    weights(weights.buffer)
     ## Return container
     return SMCParticles(modelᵛ, algorithmᵛ, weights, buffer)
 end
