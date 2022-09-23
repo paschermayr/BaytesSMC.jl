@@ -197,8 +197,8 @@ function infer(
         TJitter = Nothing
     end
     TTemperature = model.info.reconstruct.default.output
-    TGenerated = infer_generated(_rng, smc, model, data)
-    return SMCDiagnostics{TPrediction,TJitter,TTemperature,TGenerated}
+    TGenerated, TGenerated_algorithm = infer_generated(_rng, smc, model, data)
+    return SMCDiagnostics{TPrediction,TJitter,TTemperature,TGenerated, TGenerated_algorithm}
 end
 
 ############################################################################################
@@ -215,7 +215,29 @@ function infer_generated(
     _rng::Random.AbstractRNG, smc::SMC, model::ModelWrapper, data::D
 ) where {D}
     objective = Objective(model, data, smc.tune.tagged)
-    return typeof(generate(_rng, objective, smc.tune.generated))
+    TGenerated = typeof(generate(_rng, objective, smc.tune.generated))
+    TGenerated_algorithm = typeof(generate(_rng, smc, objective, smc.tune.generated))
+    return TGenerated, TGenerated_algorithm
+end
+
+############################################################################################
+"""
+$(SIGNATURES)
+Generate statistics for algorithm given model parameter and data.
+
+# Examples
+```julia
+```
+
+"""
+function generate(_rng::Random.AbstractRNG, algorithm::SMC, objective::Objective)
+    return nothing
+end
+function generate(_rng::Random.AbstractRNG, algorithm::SMC, objective::Objective, gen::BaytesCore.UpdateTrue)
+    return generate(_rng, algorithm, objective)
+end
+function generate(_rng::Random.AbstractRNG, algorithm::SMC, objective::Objective, gen::BaytesCore.UpdateFalse)
+    return nothing
 end
 
 ############################################################################################

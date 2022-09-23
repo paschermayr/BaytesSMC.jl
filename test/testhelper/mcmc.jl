@@ -25,3 +25,10 @@ function ModelWrappers.predict(_rng::Random.AbstractRNG, objective::Objective{<:
     @unpack μ, σ = model.val
 	return rand(_rng, Normal(μ, σ))
 end
+
+
+function ModelWrappers.generate(_rng::Random.AbstractRNG, algorithm::SMC, objective::Objective{<:ModelWrapper{MyBaseModel}})
+    @unpack model, data = objective
+    @unpack μ, σ = model.val
+    return Float32(123456)
+end

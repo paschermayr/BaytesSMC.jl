@@ -6,6 +6,9 @@ objectives = [
 ]
 generated = [UpdateFalse(), UpdateTrue()]
 
+#=
+iter=2
+=#
 ############################################################################################
 ## Make model for several parameter types
 for iter in eachindex(objectives)
@@ -31,8 +34,9 @@ for iter in eachindex(objectives)
         generate_showvalues(diagnostics)()
         diagtype = infer(_rng, AbstractDiagnostics, smc, _obj.model, _obj.data)
         @test diagnostics isa diagtype
-        TGenerated = BaytesSMC.infer_generated(_rng, smc, _obj.model, _obj.data)
+        TGenerated, TGeneratedAlgorithm = BaytesSMC.infer_generated(_rng, smc, _obj.model, _obj.data)
         @test diagnostics.generated isa TGenerated
+        @test diagnostics.generated_algorithm isa TGeneratedAlgorithm
         diags = Vector{diagtype}(undef, 100)
         for iter in eachindex(diags)
             _, diags[iter] = propose!(_rng, smc, _obj.model, _obj.data)

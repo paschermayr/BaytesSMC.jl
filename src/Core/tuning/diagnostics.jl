@@ -7,7 +7,7 @@ SMC Diagnostics container, including diagnostics of kernels used in jittering st
 # Fields
 $(TYPEDFIELDS)
 """
-struct SMCDiagnostics{P,J,T<:AbstractFloat,G} <: AbstractDiagnostics
+struct SMCDiagnostics{P,J,T<:AbstractFloat,G,A} <: AbstractDiagnostics
     "Diagnostics used for all Baytes kernels"
     base::BaytesCore.BaseDiagnostics{Vector{P}}
     "Weighted average of incremental log weights - can be used for marginal or log predictive likelihood computation."
@@ -32,6 +32,8 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat,G} <: AbstractDiagnostics
     resampled::Bool
     "Generated quantities specified for objective"
     generated::G
+    "Generated quantities specified for algorithm"
+    generated_algorithm::A
     function SMCDiagnostics(
         base::BaytesCore.BaseDiagnostics{Vector{P}},
         ℓincrement::Float64,
@@ -43,9 +45,10 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat,G} <: AbstractDiagnostics
         ρ::Vector{T},
         ESS::Float64,
         resampled::Bool,
-        generated::G
-    ) where {P,J,T<:AbstractFloat,G}
-        return new{P,J,T,G}(
+        generated::G,
+        generated_algorithm::A
+    ) where {P,J,T<:AbstractFloat,G,A}
+        return new{P,J,T,G,A}(
             base,
             ℓincrement,
             ℓweights,
@@ -56,7 +59,8 @@ struct SMCDiagnostics{P,J,T<:AbstractFloat,G} <: AbstractDiagnostics
             ρ,
             ESS,
             resampled,
-            generated
+            generated,
+            generated_algorithm
         )
     end
 end
@@ -70,7 +74,9 @@ function generate_showvalues(diagnostics::D) where {D<:SMCDiagnostics}
         (:Temperature, diagnostics.base.temperature),
         (:ESS, diagnostics.ESS),
         (:resampled, diagnostics.resampled),
-        (:AvgJitterCorrelation, mean(diagnostics.ρ))
+        (:AvgJitterCorrelation, mean(diagnostics.ρ)),
+        (:generated, diagnostics.generated),
+        (:generated_algorithm, diagnostics.generated_algorithm)
     end
 end
 

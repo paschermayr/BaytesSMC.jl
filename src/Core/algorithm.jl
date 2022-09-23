@@ -200,6 +200,7 @@ function propose!(
         smc.tune.jitter.Nsteps.current,
         smc.tune.iter.current,
         ModelWrappers.generate(_rng, Objective(model, data, smc.tune.tagged, proposaltuneₜ.temperature), smc.tune.generated),
+        ModelWrappers.generate(_rng, smc, Objective(model, data, smc.tune.tagged, proposaltuneₜ.temperature), smc.tune.generated),
         smc.tune.jitterdiagnostics
     )
 end

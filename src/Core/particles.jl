@@ -94,8 +94,8 @@ end
 
 ############################################################################################
 function SMCDiagnostics(
-    smc::SMCParticles, ℓincrement::S, temperature::T, ESS::Float64, accepted::Bool, jittersteps::Int64, iter::Int64, generated::G, jitterdiag::UpdateTrue
-) where {S<:AbstractFloat, T<:AbstractFloat, G}
+    smc::SMCParticles, ℓincrement::S, temperature::T, ESS::Float64, accepted::Bool, jittersteps::Int64, iter::Int64, generated::G, generated_algorithm::A, jitterdiag::UpdateTrue
+) where {S<:AbstractFloat, T<:AbstractFloat, G, A}
     return SMCDiagnostics(
         BaytesCore.BaseDiagnostics(
             Statistics.mean(smc.buffer.cumweights),
@@ -113,12 +113,13 @@ function SMCDiagnostics(
         copy(smc.buffer.correlation.ρ),
         ESS,
         accepted,
-        generated
+        generated,
+        generated_algorithm
     )
 end
 function SMCDiagnostics(
-    smc::SMCParticles, ℓincrement::S, temperature::T, ESS::Float64, accepted::Bool, jittersteps::Int64, iter::Int64, generated::G, jitterdiag::UpdateFalse
-) where {S<:AbstractFloat, T<:AbstractFloat, G}
+    smc::SMCParticles, ℓincrement::S, temperature::T, ESS::Float64, accepted::Bool, jittersteps::Int64, iter::Int64, generated::G, generated_algorithm::A, jitterdiag::UpdateFalse
+) where {S<:AbstractFloat, T<:AbstractFloat, G, A}
     return SMCDiagnostics(
         BaytesCore.BaseDiagnostics(
             Statistics.mean(smc.buffer.cumweights),
@@ -136,7 +137,8 @@ function SMCDiagnostics(
         copy(smc.buffer.correlation.ρ),
         ESS,
         accepted,
-        generated
+        generated,
+        generated_algorithm
     )
 end
 

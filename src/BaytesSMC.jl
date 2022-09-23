@@ -18,6 +18,7 @@ import BaytesCore:
     get_result,
     get_sym,
     generate_showvalues,
+    generate,
     ResamplingMethod,
     shuffle!,
     resample!,
@@ -64,7 +65,7 @@ using BaytesDiff:
     ℓDensityResult,
     ℓGradientResult
 
-import ModelWrappers: predict, generate, dynamics
+import ModelWrappers: predict, dynamics
 
 import BaytesFilters: ParticleKernel
 using BaytesMCMC, BaytesFilters, BaytesPMCMC
@@ -96,6 +97,7 @@ export
     ResamplingMethod,
     infer,
     SampleDefault,
+    generate,
 
     # SMC
     update!,
@@ -105,7 +107,6 @@ export
 
     #ModelWrappers
     predict,
-    generate,
     dynamics
 
 end
