@@ -236,7 +236,7 @@ proposaltune = proposaltuneₜ₋₁
 init!(tune.resample, false)
 ## Compute ESS
 ESS = BaytesCore.computeESS(particles.weights)
-resampled = BaytesCore.issmaller(ESS, tune.chains.Nchains * tune.chains.threshold)
+resampled = BaytesCore.isresampled(ESS, tune.chains.Nchains * tune.chains.threshold)
 if resampled
     ## Record in tuning for diagnostics and propagation step
     init!(tune.resample, true)
