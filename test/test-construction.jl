@@ -20,7 +20,7 @@ for iter in eachindex(objectives)
         kerneldefault  = SMCDefault(Ntuning = 5, jittermin = 1, jittermax = 5)
         samplingdefault = SampleDefault(chains = 4)
         smc_c = SMCConstructor(mcmc, SMCDefault(;generated = generated[iter]))
-        smc_c(_rng, _obj.model, _obj.data, _obj.temperature, samplingdefault)
+        smc_c(_rng, _obj.model, _obj.data, BaytesCore.ProposalTune(_obj.temperature), samplingdefault)
         SMC(_rng, mcmc, _obj, kerneldefault, samplingdefault)
         @test BaytesCore.get_sym(mcmc) == BaytesSMC.get_sym(smc_c)
         ## Propose new parameter

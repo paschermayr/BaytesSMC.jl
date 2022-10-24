@@ -23,13 +23,13 @@ function (constructor::SMCConstructor)(
     _rng::Random.AbstractRNG,
     model::ModelWrapper,
     data::D,
-    temperature::F,
+    proposaltune::P,
     info::BaytesCore.SampleDefault
-) where {D, F<:AbstractFloat}
+) where {D, P<:BaytesCore.ProposalTune}
     return SMC(
         _rng,
         constructor.kernel,
-        Objective(model, data, Tagged(model), temperature),
+        Objective(model, data, Tagged(model), proposaltune.temperature),
         constructor.default,
         info
     )

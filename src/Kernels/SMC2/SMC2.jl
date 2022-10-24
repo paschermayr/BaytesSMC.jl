@@ -47,13 +47,13 @@ function (constructor::SMC2Constructor)(
     _rng::Random.AbstractRNG,
     model::ModelWrapper,
     data::D,
-    temperature::F,
+    proposaltune::P,
     info::BaytesCore.SampleDefault
-) where {D, F<:AbstractFloat}
+) where {D, P<:BaytesCore.ProposalTune}
     @unpack propagation, jitter = constructor
     # Start with jitter kernel in case model parameter are sampled from prior, then initialize propagation kernel
-    _jitter = jitter(_rng, model, data, temperature, info)
-    _propagation = propagation(_rng, model, data, temperature, info)
+    _jitter = jitter(_rng, model, data, proposaltune, info)
+    _propagation = propagation(_rng, model, data, proposaltune, info)
     return SMC2Kernel(_propagation, _jitter)
 end
 
@@ -146,7 +146,10 @@ function SMCParticles(
     )
     ## Initialize individual Models ~ Assign copies for  Model and Algorithms ~ necessary in initiation so no pointer error
     modelᵛ = [deepcopy(modelᵗᵉᵐᵖ) for _ in Base.OneTo(Nchains)]
-    algorithmᵛ = [kernel(_rng, modelᵛ[iter], data, temperature, info) for iter in Base.OneTo(Nchains)]
+    #!NOTE: Train with fully available data
+    proposaltune = BaytesCore.ProposalTune(temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(BaytesCore.Batch()))
+    proposaltune_captured = BaytesCore.ProposalTune(temperature, tune.capture, BaytesCore.DataTune(BaytesCore.Batch()))
+    algorithmᵛ = [kernel(_rng, modelᵛ[iter], data, proposaltune_captured, info) for iter in Base.OneTo(Nchains)]
 
     ## Assign weights
     weights = BaytesCore.ParameterWeights(Nchains)
@@ -157,9 +160,6 @@ function SMCParticles(
     ## Loop through all models
     #!NOTE: Polyester may change type to StridedArray, which is not supported in SMC kernel INITIATION
 #    Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(algorithmᵛ)
-    #!NOTE: Train with fully available data
-    proposaltune = BaytesCore.ProposalTune(temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(BaytesCore.Batch()))
-    proposaltune_captured = BaytesCore.ProposalTune(temperature, tune.capture, BaytesCore.DataTune(BaytesCore.Batch()))
     Base.Threads.@threads for iter in eachindex(algorithmᵛ)
         ## Tune PMCMC algorithm - always with UpdateTrue for first iteration
         propose!(_rng, algorithmᵛ[iter].pmcmc, modelᵛ[iter], data, proposaltune)

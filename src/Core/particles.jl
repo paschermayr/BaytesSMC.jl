@@ -54,7 +54,10 @@ function SMCParticles(
         ModelWrapper(deepcopy(modelᵗᵉᵐᵖ.val), deepcopy(modelᵗᵉᵐᵖ.arg), modelᵗᵉᵐᵖ.info, modelᵗᵉᵐᵖ.id) for
         _ in Base.OneTo(Nchains)
     ]
-    algorithmᵛ = [JitterKernel(_rng, modelᵛ[iter], data, temperature, info) for iter in Base.OneTo(Nchains)]
+    #!NOTE: Train with fully available data
+    proposaltune = BaytesCore.ProposalTune(temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(BaytesCore.Batch()))
+    proposaltune_captured = BaytesCore.ProposalTune(temperature, tune.capture, BaytesCore.DataTune(BaytesCore.Batch()))
+    algorithmᵛ = [JitterKernel(_rng, modelᵛ[iter], data, proposaltune_captured, info) for iter in Base.OneTo(Nchains)]
     ## Assign weights
     weights = BaytesCore.ParameterWeights(Nchains)
     ## Assign buffer for inplace resampling
@@ -64,9 +67,6 @@ function SMCParticles(
     ## Loop through all models
     #!NOTE: Polyester may change type to StridedArray, which is not supported in SMC kernel INITIATION
 #    Polyester.@batch per=thread minbatch=tune.batchsize for iter in eachindex(algorithmᵛ)
-    #!NOTE: Train with fully available data
-    proposaltune = BaytesCore.ProposalTune(temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(BaytesCore.Batch()))
-    proposaltune_captured = BaytesCore.ProposalTune(temperature, tune.capture, BaytesCore.DataTune(BaytesCore.Batch()))
     Base.Threads.@threads for iter in eachindex(algorithmᵛ)
         ## Tune kernel
         #Update kernel for first iteration - always with UpdateTrue for first iteration
