@@ -35,7 +35,7 @@ using ModelWrappers, BaytesSMC
 using Distributions, Random, UnPack
 _rng = Random.GLOBAL_RNG
 #Create Model and data
-myparameter = (μ = Param(0.0, Normal()), σ = Param(1.0, Gamma()))
+myparameter = (μ = Param(Normal(), 0.0, ), σ = Param(Gamma(), 1.0, ))
 mymodel = ModelWrapper(myparameter)
 data = randn(1000)
 #Create objective for both μ and σ and define a target function for it
