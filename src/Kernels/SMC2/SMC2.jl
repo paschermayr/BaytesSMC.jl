@@ -92,7 +92,7 @@ end
 
 function SMCweight(_rng::Random.AbstractRNG, algorithm::SMC2Kernel, objective::Objective, proposaltune::P, cumweightsₜ₋₁) where {P<:ProposalTune}
     #!NOTE: Use cumulative weight from propagated pf, taking into account new data
-    cumweightsₜ = objective.temperature * algorithm.pf.particles.ℓobjective.cumulative #get_ℓweight(algorithm.pf)
+    cumweightsₜ = objective.temperature * algorithm.pf.particles.ℓobjective.cumulative
     #!NOTE: cumweightsₜ₋₁ already has correct temperature at t-1
     return cumweightsₜ, cumweightsₜ - cumweightsₜ₋₁
 end
