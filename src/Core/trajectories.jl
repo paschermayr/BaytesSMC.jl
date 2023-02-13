@@ -258,7 +258,7 @@ Computes particle weights after jiterring step. Defaults to `SMCweight` function
 ```
 
 """
-function SMCreweight(_rng::Random.AbstractRNG, algorithm, objective::Objective, proposaltune::P, cumweightsₜ₋₁) where {D, P<:ProposalTune}
+function SMCreweight(_rng::Random.AbstractRNG, algorithm, objective::Objective, proposaltune::P, cumweightsₜ₋₁) where {P<:ProposalTune}
     return SMCweight(_rng, algorithm, objective, proposaltune, cumweightsₜ₋₁)
 end
 
