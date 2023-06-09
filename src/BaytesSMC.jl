@@ -73,7 +73,7 @@ using BaytesMCMC, BaytesFilters, BaytesPMCMC
 using DocStringExtensions:
     DocStringExtensions, TYPEDEF, TYPEDFIELDS, FIELDS, SIGNATURES, FUNCTIONNAME
 using ArgCheck: ArgCheck, @argcheck
-using UnPack: UnPack, @unpack, @pack!
+using SimpleUnPack: SimpleUnPack, @unpack, @pack!
 
 using Random: Random, AbstractRNG, GLOBAL_RNG
 using Statistics: Statistics, mean, std, sqrt, quantile, var, cor
