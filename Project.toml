@@ -1,7 +1,7 @@
 name = "BaytesSMC"
 uuid = "2428e3a5-deaa-4b4d-8ec5-54cd60d7566c"
 authors = ["Patrick Aschermayr <p.aschermayr@gmail.com>"]
-version = "0.3.2"
+version = "0.3.3"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
@@ -23,9 +23,9 @@ BaytesDiff = "0.2"
 BaytesFilters = "0.3"
 BaytesMCMC = "0.3"
 BaytesPMCMC = "0.3"
-Distributions = "0.24, 0.25"
+Distributions = "0.25"
 DocStringExtensions = "0.8, 0.9"
-ModelWrappers = "0.4"
+ModelWrappers = "0.5"
 SimpleUnPack = "1"
 julia = "^1.8"
 
