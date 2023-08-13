@@ -90,7 +90,8 @@ struct SMCBuffer{M<:NamedTuple,I<:Integer,L<:Real,T<:AbstractFloat,F<:AbstractFl
         data::D,
         Nchains::Int64;
         ancestortype::Type{I}=Int64,
-    ) where {K<:Union{MCMC,PMCMC},M<:ModelWrapper,D,I<:Integer}
+    ) where {K<:AbstractAlgorithm,M<:ModelWrapper,D,I<:Integer}
+#    ) where {K<:Union{MCMC,PMCMC},M<:ModelWrapper,D,I<:Integer}
         @argcheck 0 < Nchains "Nchains need to be positive"
         result = BaytesCore.get_result(kernel)
         Nparams = length(result.θᵤ)
