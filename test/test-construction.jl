@@ -9,6 +9,7 @@ generated = [UpdateFalse(), UpdateTrue()]
 #=
 iter=2
 =#
+
 ############################################################################################
 ## Make model for several parameter types
 for iter in eachindex(objectives)
@@ -49,7 +50,6 @@ for iter in eachindex(objectives)
         @test !isa(diagnostics.jitterdiagnostics, Vector{Nothing})
     end
 end
-
 
 @testset "Kernel construction and propagation, ASMC with PMCMC" begin
     ## MCMC
@@ -94,7 +94,7 @@ end
 for iter in eachindex(objectives)
     _obj = objectives[iter]
     _flattentype = _obj.model.info.reconstruct.default.output
-    @testset "Kernel construction and propagation, IBIS" begin
+    @testset "Kernel construction and propagation, IBIS and MCMC" begin
         ## Assign smc kernel ~ use PMCMC to check both MCMC and Particle Filter
         ## MCMC
         mcmc = MCMC(NUTS,(:μ, :σ,); stepsize = ConfigStepsize(;stepsizeadaption = UpdateFalse()))
@@ -113,6 +113,83 @@ for iter in eachindex(objectives)
         @test eltype(diagnostics.ρ) == _flattentype
         ## Postprocessing
         smc = SMC(_rng, mcmc, _obj2)
+        diagtype = infer(_rng, AbstractDiagnostics, smc, _obj.model, _obj.data)
+        @test diagnostics isa diagtype
+        datadiff = length(_obj.data) - length(_obj2.data) - 1
+
+        diags = Vector{diagtype}(undef, datadiff)
+        for iter in eachindex(diags)
+            data_temp = _obj.data[1:(length(_obj2.data) + iter)]
+            proposaltune_updatetrue = BaytesCore.ProposalTune(_obj.temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(data_temp, BaytesCore.Expanding( length(data_temp) ) ) )
+            _, diags[iter] = propose!(_rng, smc, _obj.model, data_temp, proposaltune_updatetrue)
+        end
+        results(diags, smc, 2, [.1, .2, .5, .8, .9])
+    end
+end
+
+############################################################################################
+## Check ASMC and IBIS with BaytesOptim Kernel
+
+using NLSolversBase, Optim
+@testset "Kernel construction and propagation, ASMC with Optimizer" begin
+    ## Optimizer
+    BaytesOptimizer = Optimizer(OptimLBFG, (:μ, :σ,) )
+    kerneldefault  = SMCDefault(Ntuning = 5, jittermin = 1, jittermax = 5, resamplingthreshold = 1.0)
+    ## Propose new parameter
+    @test length(myobjective_mcmc.model.val.latent) == length(myobjective_mcmc.data)
+    smc = SMC(_rng, BaytesOptimizer, myobjective_mcmc, kerneldefault)
+    proposaltune_updatetrue = BaytesCore.ProposalTune(myobjective_mcmc.temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(BaytesCore.Batch(), nothing, nothing) )
+    vals, diagnostics = propose!(
+        _rng,
+        smc,
+        myobjective_mcmc.model,
+        myobjective_mcmc.data,
+        proposaltune_updatetrue
+    )
+
+    ## Postprocessing
+    diagtype = infer(_rng, AbstractDiagnostics, smc, myobjective_mcmc.model, myobjective_mcmc.data)
+    @test diagnostics isa diagtype
+    smc = SMC(_rng, BaytesOptimizer, myobjective_mcmc)
+    diags = Vector{diagtype}(undef, 100)
+    for iter in eachindex(diags)
+        _, diags[iter] = propose!(
+            _rng,
+            smc,
+            myobjective_mcmc.model,
+            myobjective_mcmc.data,
+            proposaltune_updatetrue
+        )
+    end
+    #sum( diags[iter].resampled for iter in eachindex(diags) )
+    results(diags, smc, 2, [.1, .2, .5, .8, .9])
+end
+
+for iter in eachindex(objectives)
+    _obj = objectives[iter]
+    _flattentype = _obj.model.info.reconstruct.default.output
+    @testset "Kernel construction and propagation, IBIS with BaytesOptim" begin
+        ## Assign smc kernel ~ use PMCMC to check both MCMC and Particle Filter
+        ## Optimizer
+        BaytesOptimizer = Optimizer(OptimLBFG, (:μ, :σ,) )
+        kerneldefault  = SMCDefault(Ntuning = 5, jittermin = 1, jittermax = 5, resamplingthreshold = 1.0)
+        samplingdefault = SampleDefault(chains = 4)
+
+        smc_c = SMCConstructor(BaytesOptimizer, SMCDefault())
+
+        #Create new objective with small amount of data
+        _obj2 = Objective(_obj.model, _obj.data[1:50])
+        SMC(_rng, BaytesOptimizer, _obj2, kerneldefault, samplingdefault)
+        @test BaytesCore.get_sym(BaytesOptimizer) == BaytesSMC.get_sym(smc_c)
+
+        ## Propose new parameter
+        smc = SMC(_rng, BaytesOptimizer, _obj2, kerneldefault, samplingdefault)
+        proposaltune_updatetrue = BaytesCore.ProposalTune(_obj2.temperature, BaytesCore.UpdateTrue(), BaytesCore.DataTune(_obj2.data, BaytesCore.Expanding( length( _obj2.data ) ) ) )
+        vals, diagnostics = propose!(_rng, smc, _obj2.model, _obj2.data, proposaltune_updatetrue)
+        @test eltype(diagnostics.ρ) == _flattentype
+
+        ## Postprocessing
+        smc = SMC(_rng, BaytesOptimizer, _obj2, kerneldefault, samplingdefault)
         diagtype = infer(_rng, AbstractDiagnostics, smc, _obj.model, _obj.data)
         @test diagnostics isa diagtype
         datadiff = length(_obj.data) - length(_obj2.data) - 1

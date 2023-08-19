@@ -1,7 +1,7 @@
 name = "BaytesSMC"
 uuid = "2428e3a5-deaa-4b4d-8ec5-54cd60d7566c"
 authors = ["Patrick Aschermayr <p.aschermayr@gmail.com>"]
-version = "0.3.4"
+version = "0.3.5"
 
 [deps]
 ArgCheck = "dce04be8-c92d-5529-be00-80e4d2c0e197"
@@ -10,6 +10,7 @@ BaytesDiff = "12a76ff9-393d-487f-8b39-e615b97e2f77"
 BaytesFilters = "26b78818-2f47-47c8-af4b-89b2c3dade3f"
 BaytesMCMC = "8e6e46a0-107e-4f93-8296-97663f3953ce"
 BaytesPMCMC = "c4a8eb41-45be-4f57-9046-b06303d6bef8"
+BaytesOptim = "c78c806d-0713-4f4e-8b87-f7023233ea83"
 DocStringExtensions = "ffbed154-4ef7-542d-bbb7-c09d3a79fcae"
 ModelWrappers = "44c54197-9f56-47cc-9960-7f2e20bfb0d6"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
@@ -23,6 +24,7 @@ BaytesDiff = "0.2"
 BaytesFilters = "0.3"
 BaytesMCMC = "0.3"
 BaytesPMCMC = "0.3"
+BaytesOptim = "0.1"
 Distributions = "0.25"
 DocStringExtensions = "0.8, 0.9"
 ModelWrappers = "0.5"
@@ -32,6 +34,8 @@ julia = "^1.8"
 [extras]
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+NLSolversBase = "d41bc354-129a-5804-8e4c-c37616107c6c"
+Optim = "429524aa-4258-5aef-a3af-852621145aeb"
 
 [targets]
-test = ["Test", "Distributions"]
+test = ["Test", "Distributions", "NLSolversBase", "Optim"]

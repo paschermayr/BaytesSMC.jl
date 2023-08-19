@@ -13,6 +13,7 @@ using
     BaytesMCMC,
     BaytesFilters,
     BaytesPMCMC,
+    BaytesOptim,
     BaytesSMC
 
 ############################################################################################
