@@ -16,6 +16,7 @@ using
     BaytesOptim,
     BaytesSMC
 
+using ForwardDiff
 ############################################################################################
 # Include Files
 include("testhelper/TestHelper.jl")
