@@ -1,3 +1,6 @@
 [deps]
 BaytesSMC = "2428e3a5-deaa-4b4d-8ec5-54cd60d7566c"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+
+[compat]
+Documenter = "1"

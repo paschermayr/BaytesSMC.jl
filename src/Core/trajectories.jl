@@ -125,7 +125,7 @@ end
 ############################################################################################
 """
 $(SIGNATURES)
-Propagate data forward over time. If (latent) data has to be extended, need to overload this function for specific smc kernel.
+Propagate data forward over time. If (latent) data has to be extended, need to overload this function for specific smc kernel. I.e., SMC2 Algorithm dispatches on SMCParticles{<:SMC2Kernel}.
 
 # Examples
 ```julia
